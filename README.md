@@ -6,7 +6,7 @@ How do we sort a bunch of integers without loading them all into memory? The ans
 
 I originally saw this listed somewhere as an interview question, and while I figured out the answer fairly quickly ("Store the integers in files, sort them in chunks, and then merge the sorted chunks"), I found myself pondering the implementation details. In other words, how would I implement that solution?
 
-I first solved the problem in the [NodeLargeSort](https://github.com/Maultasche/NodeLargeSort) project using Node.js to help me get better at coding in Node.js. Then I implemented the solution again in the [LargeSortCSharp](https://github.com/Maultasche/LargeSortCSharp) project just to see how well I could do it in C# and to see how the performance differed. Now I'm going to reimplement the solution in Elixir to practice using Elixir.
+I first solved the problem in the [NodeLargeSort](https://github.com/Maultasche/NodeLargeSort) project using Node.js to help me get better at coding in Node.js. Then I implemented the solution again in the [LargeSortCSharp](https://github.com/Maultasche/LargeSortCSharp) project just to see how well I could do it in C# and to see how the performance differed from the Node.js implementation. Now in this project, I'm going to reimplement the solution in Elixir to practice using Elixir.
 
 This project consists of two runnable programs.
 
@@ -14,7 +14,7 @@ This project consists of two runnable programs.
   - Accepts the number of integers to generate as an input parameter
   - Writes the randomly generated integers to an output file, the name of which is an input parameter
   - The output file contains one integer per line
-2. A program for sorting the integers
+2. A program for sorting the file of random integers
   - Accepts the input file and the maximum number of integers to load into memory at any time during the process (aka the chunk size)
   - Writes the final result to an output file, the name of which is also an input parameter
   - Accepts a parameter which will tell the sorting program to not erase the intermediate files when it is done
@@ -36,7 +36,7 @@ If only N integers can be loaded into memory at any given time, but the total nu
 5. We'll open up to P intermediate files at a time, where P will probably be 10. Each file contains a chunk of sorted integers, so we'll have P pointers to the integers at the beginning of the file.
 6. We'll find the min value in that set of P integers, and write that min value to an intermediate output file. Then we'll take the file pointer where the min value originated from and advance that file pointer to the next integer. We'll repeat this until all P file pointers have advanced to the end of the file.
 7. Repeat Steps 5 and 6 until all F output files have been processed. The resulting sorted files will be referred to as Gen 2 files. 
-8. At this point, we may only have one Gen 2 file, in which case we are be finished, but if F > P, we'll have multiple Gen 2 files where the size of each file is P * N integers or less. In that case, repeat Steps 5 - 7 until all we only produce a single output file (the Gen R file, where R is the number of intermediate file iterations we went through). 
+8. At this point, we may only have one Gen 2 file, in which case we are be finished, but if F > P, we'll have multiple Gen 2 files where the size of each file is P * N integers or less. In that case, repeat Steps 5 - 7 until all we only produce a single output file (the Gen R file, where R is the number of intermediate file iterations we went through). All the sorted integers from the initial set of intermediate files will now be merged into a single sorted file, and we'll be finished.
 
 Each intermediate file iteration will reduce the number of intermediate files by a factor of P, so the performance of the merging process is O(N Log(N))
 
