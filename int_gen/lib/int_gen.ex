@@ -2,6 +2,7 @@ defmodule IntGen do
   @moduledoc """
   Contains the functionality for creating a file of random integers
   """
+  alias LargeSort.Shared.IntegerFile
 
   @doc """
   Creates a stream that generates an endless number of random integers
@@ -18,28 +19,38 @@ defmodule IntGen do
 
   A stream that will generate an endless number of random integers
   """
+  @spec random_integer_stream(integer(), integer()) :: Enumerable.t()
   def random_integer_stream(min_value, max_value) do
     Stream.repeatedly(fn -> Enum.random(min_value..max_value) end)
   end
 
   @doc """
-  Writes the contents of a stream to an integer file, where each
-  element has its own line
+  Creates a random integer file that contains a random integer on each line
 
-  If the file being written to already exists, it will be overwritten
+  This function will throw an exception if anything goes wrong.
 
   ## Parameters
 
-  - stream: the stream whose contents are to be written to the file
-  - path: the path of the file to be written to
-
-  ## Returns
-
-  `:ok` if the file was written correctly, otherwise `{:error, :reason}`,
-  where `:reason` is replaced by a standard Elixir atom from the `File`
-  module that describes why it could not be written.
+  - path: the path of the file to be created. If the file already exists, it will
+  be overwritten
+  - num: the number of random integers to be generated
+  - min_value: the lower bound (inclusive) of the range of integers to
+  be generated
+  - max_value: the upper bound (inclusive) of the range of integers to
+  be generated
   """
-  def stream_to_integer_file(stream, path) do
+  @spec create_random_integer_file!(String.t(), non_neg_integer(), integer(), integer()) :: :ok
+  def create_random_integer_file!(path, num, min_value, max_value) do
+    #Create the integer file stream
+    file_stream = IntegerFile.create_integer_file_stream(path)
 
+    #Create the random integer stream
+    random_int_stream = random_integer_stream(min_value, max_value)
+
+    #Pipe N random integers to the file stream
+    random_int_stream
+    |> Stream.take(num)
+    |> IntegerFile.write_integers_to_stream(file_stream)
+    |> Stream.run()
   end
 end
