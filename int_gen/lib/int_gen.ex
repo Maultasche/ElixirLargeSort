@@ -27,8 +27,6 @@ defmodule IntGen do
   @doc """
   Creates a random integer file that contains a random integer on each line
 
-  This function will throw an exception if anything goes wrong.
-
   ## Parameters
 
   - path: the path of the file to be created. If the file already exists, it will
@@ -39,8 +37,8 @@ defmodule IntGen do
   - max_value: the upper bound (inclusive) of the range of integers to
   be generated
   """
-  @spec create_random_integer_file!(String.t(), non_neg_integer(), integer(), integer()) :: :ok
-  def create_random_integer_file!(path, num, min_value, max_value) do
+  @spec create_random_integer_file(String.t(), non_neg_integer(), integer(), integer()) :: :ok
+  def create_random_integer_file(path, num, min_value, max_value) do
     #Create the integer file stream
     file_stream = IntegerFile.create_integer_file_stream(path)
 

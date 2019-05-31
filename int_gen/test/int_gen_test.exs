@@ -4,7 +4,7 @@ defmodule IntGenTest do
 
   @num_stream_elements 1000
 
-  describe "Testing the random integer stream" do
+  describe "random_integer_stream -" do
     test "Generates integers" do
       random_stream = IntGen.random_integer_stream(1, 100)
 
@@ -51,6 +51,36 @@ defmodule IntGenTest do
 
     test "Testing large range" do
       test_range(-1_000_000_000, 1_000_000_000)
+    end
+  end
+
+  describe "create_random_integer_file! -" do
+    test "Generate small number of random integers" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate large number of random integers" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate positive random integers" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate negative random integers" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate positive and negative random integers" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate a single random integer" do
+      flunk "This test has not yet been implemented"
+    end
+
+    test "Generate zero random integers" do
+      flunk "This test has not yet been implemented"
     end
   end
 
