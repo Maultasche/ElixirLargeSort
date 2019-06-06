@@ -2,7 +2,7 @@ defmodule IntGen do
   @moduledoc """
   Contains the functionality for creating a file of random integers
   """
-  alias LargeSort.Shared.IntegerFile
+  @integer_file Application.get_env(:int_gen, :integer_file)
 
   @doc """
   Creates a stream that generates an endless number of random integers
@@ -10,45 +10,38 @@ defmodule IntGen do
 
   ## Parameters
 
-  - min_value: the lower bound (inclusive) of the range of integers to
-  be generated
-  - max_value: the upper bound (inclusive) of the range of integers to
-  be generated
+  - integer_range: the range of integers to be generated
 
   ## Returns
 
   A stream that will generate an endless number of random integers
   """
-  @spec random_integer_stream(integer(), integer()) :: Enumerable.t()
-  def random_integer_stream(min_value, max_value) do
-    Stream.repeatedly(fn -> Enum.random(min_value..max_value) end)
+  @spec random_integer_stream(Range.t()) :: Enumerable.t()
+  def random_integer_stream(integer_range) do
+    Stream.repeatedly(fn -> Enum.random(integer_range) end)
   end
 
   @doc """
-  Creates a random integer file that contains a random integer on each line
+  Creates an integer file that contains an integer on each line
 
   ## Parameters
 
   - path: the path of the file to be created. If the file already exists, it will
   be overwritten
-  - num: the number of random integers to be generated
-  - min_value: the lower bound (inclusive) of the range of integers to
-  be generated
-  - max_value: the upper bound (inclusive) of the range of integers to
-  be generated
+  - num: the number of integers to written to the file. If there aren't enough integers
+  in the random integer stream or enumerable to fulfill this number, then only the
+  max possible number of integers are written.
+  - integers: A stream or enumerable containing the integers to be written
   """
-  @spec create_random_integer_file(String.t(), non_neg_integer(), integer(), integer()) :: :ok
-  def create_random_integer_file(path, num, min_value, max_value) do
-    #Create the integer file stream
-    file_stream = IntegerFile.create_integer_file_stream(path)
+  @spec create_integer_file(String.t(), non_neg_integer(), Enumerable.t()) :: :ok
+  def create_integer_file(path, num, integers) do
+    # Create the integer file stream
+    file_stream = @integer_file.create_integer_file_stream(path)
 
-    #Create the random integer stream
-    random_int_stream = random_integer_stream(min_value, max_value)
-
-    #Pipe N random integers to the file stream
-    random_int_stream
+    # Pipe N integers to the file stream
+    integers
     |> Stream.take(num)
-    |> IntegerFile.write_integers_to_stream(file_stream)
+    |> @integer_file.write_integers_to_stream(file_stream)
     |> Stream.run()
   end
 end

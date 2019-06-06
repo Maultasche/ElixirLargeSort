@@ -1,5 +1,3 @@
-Mox.defmock(IntGen.IntegerFileMock, for: LargeShort.Shared.IntegerFileBehavior)
-
-Application.put_env(:int_gen, :integer_file, IntGen.IntegerFileMock)
+Mox.defmock(IntGen.IntegerFileMock, for: LargeSort.Shared.IntegerFileBehavior)
 
 ExUnit.start()
