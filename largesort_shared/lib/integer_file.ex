@@ -1,5 +1,5 @@
 defmodule LargeSort.Shared.IntegerFile do
-  alias LargeShort.Shared.IntegerFileBehavior
+  alias LargeSort.Shared.IntegerFileBehavior
   @behaviour IntegerFileBehavior
 
   @moduledoc """

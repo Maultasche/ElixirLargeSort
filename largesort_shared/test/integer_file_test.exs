@@ -8,6 +8,10 @@ defmodule LargeSortShared.Test.IntegerFile do
 
   #Tests create_integer_file_stream
   describe "create_integer_file_stream -" do
+    setup do
+      on_exit(&delete_test_file/0)
+    end
+
     test "Create integer file stream and write to it" do
       #Create the file stream and write some test data to the file stream
       test_data = 1..10
@@ -20,9 +24,6 @@ defmodule LargeSortShared.Test.IntegerFile do
       #Verify that the stream was created correctly by verifying the data that was
       #written to the file stream
       verify_integer_file(@test_integer_file_name, test_data)
-
-      #Don't forget to clean up by deleting the test file
-      File.rm!(@test_integer_file_name)
     end
 
     test "Create integer file stream and read from it" do
@@ -39,13 +40,14 @@ defmodule LargeSortShared.Test.IntegerFile do
 
       #Verify that the stream can read from the file correctly
       verify_integer_stream(file_stream, test_data)
-
-      #Don't forget to clean up by deleting the test file
-      File.rm!(@test_integer_file_name)
     end
   end
 
   describe "write_integers_to_stream -" do
+    setup do
+      on_exit(&delete_test_file/0)
+    end
+
     test "Write a small number of integers to a stream" do
       test_write_integers_to_stream(-100..100)
     end
@@ -73,10 +75,12 @@ defmodule LargeSortShared.Test.IntegerFile do
 
       #Verify that the data that was written to the file stream correctly
       verify_integer_file(@test_integer_file_name, test_data)
-
-      #Don't forget to clean up by deleting the test file
-      File.rm!(@test_integer_file_name)
     end
+  end
+
+  #Deletes the test file
+  defp delete_test_file() do
+    File.rm!(@test_integer_file_name)
   end
 
   #Writes an enumerable containing integers to a stream
