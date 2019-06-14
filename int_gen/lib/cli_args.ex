@@ -1,10 +1,12 @@
 defmodule IntGen.CLI.Args do
-  import IntGen.CLI.Options
+  alias IntGen.CLI.Options
 
-  @type parsed_switches :: keyword()
-  @type parsed_additional_args :: list(String.t())
+  @type parsed_switches() :: keyword()
+  @type parsed_additional_args() :: list(String.t())
   @type parsed_args() :: {parsed_switches(), parsed_additional_args(), list()}
-  @type validation_response() :: :ok | {:error, list(String.t())}
+  @type error_response() :: {:error, list(String.t())}
+  @type validation_response() :: :ok | error_response()
+  @type options_response() :: {:ok, Options.t()} | {:ok, :help} | error_response()
 
   @moduledoc """
   Contains functionality for parsing and validating command line arguments
@@ -31,8 +33,7 @@ defmodule IntGen.CLI.Args do
   An `{:ok, options}` tuple containing parsed options, or `{:ok, :help}` if help was requested,
   or `{:error, messages}` if there was an option validation issue.
   """
-  @spec parse_args(list(String.t())) ::
-          {:ok, Options.t()} | {:ok, :help} | {:error, list(String.t())}
+  @spec parse_args(list(String.t())) :: options_response()
   def parse_args(argv) do
     OptionParser.parse(argv,
       switches: [help: :boolean, count: :integer, lower_bound: :integer, upper_bound: :integer],
@@ -43,16 +44,53 @@ defmodule IntGen.CLI.Args do
 
   # Performs validation on the parsed arguments and converts any valid parsed arguments
   # to options
-  @spec args_to_options(parsed_args()) :: Options.t() | {:error, list(String.t())} | :help
+  @spec args_to_options(parsed_args()) :: options_response()
   defp args_to_options({parsed_args, additional_args, _}) do
     # Validate the arguments
-    validate_args(parsed_args, additional_args)
+    validation_response = validate_args(parsed_args, additional_args)
 
-    # If the arguments are valid, convert them to options
+    # Handle the validation response and convert to options
+    args_to_options(parsed_args, additional_args, validation_response)
   end
 
+  @spec args_to_options(
+          parsed_switches(),
+          parsed_additional_args(),
+          atom() | validation_response()
+        ) ::
+          options_response()
+  defp args_to_options(parsed_args, additional_args, :ok) do
+    args_to_options(parsed_args, additional_args)
+  end
+
+  defp args_to_options(_, _, validation_response) do
+    validation_response
+  end
+
+  # Converts the arguments to either an options struct or a :help atom depending
+  # on whether the help switch was set. This function assumes that argument validation
+  # was successful.
+  @spec args_to_options(parsed_switches(), parsed_additional_args()) ::
+          Options.t() | :help
+  defp args_to_options(parsed_args, additional_args) do
+    # If the help switch was set, return :help, otherwise convert the arguments
+    # to an options struct
+    if contains_help_switch(parsed_args) do
+      {:ok, :help}
+    else
+      {:ok,
+       Options.new(
+         Keyword.get(parsed_args, :count),
+         Keyword.get(parsed_args, :lower_bound),
+         Keyword.get(parsed_args, :upper_bound),
+         hd(additional_args)
+       )}
+    end
+  end
+
+  # Validates the arguments
   @spec validate_args(parsed_switches(), parsed_additional_args()) ::
-          :ok | {:error, list(String.t())}
+          :ok | error_response()
   defp validate_args(parsed_args, additional_args) do
     if contains_help_switch(parsed_args) do
       :ok
