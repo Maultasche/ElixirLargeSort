@@ -7,6 +7,7 @@ defmodule IntGen.MixProject do
       version: "0.1.0",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
+      escript: escript_config(),
       deps: deps()
     ]
   end
@@ -23,6 +24,12 @@ defmodule IntGen.MixProject do
     [
       {:largesort_shared, path: "../largesort_shared"},
       {:mox, "~> 0.5.1", only: [:test]}
+    ]
+  end
+
+  defp escript_config do
+    [
+      main_module: IntGen.CLI
     ]
   end
 end
