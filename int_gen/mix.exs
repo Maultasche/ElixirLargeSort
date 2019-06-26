@@ -7,6 +7,7 @@ defmodule IntGen.MixProject do
       version: "0.1.0",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env),
       escript: escript_config(),
       deps: deps()
     ]
@@ -32,4 +33,7 @@ defmodule IntGen.MixProject do
       main_module: IntGen.CLI
     ]
   end
+
+  defp elixirc_paths(:test), do: ["test/support", "lib"]
+  defp elixirc_paths(_), do: ["lib"]
 end

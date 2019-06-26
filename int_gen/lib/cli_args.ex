@@ -6,6 +6,7 @@ defmodule IntGen.CLI.Args do
   @type parsed_args() :: {parsed_switches(), parsed_additional_args(), list()}
   @type error_response() :: {:error, list(String.t())}
   @type validation_response() :: :ok | error_response()
+  @type validation_errors() :: {parsed_switches(), parsed_additional_args(), list()}
   @type options_response() :: {:ok, Options.t()} | {:ok, :help} | error_response()
 
   @moduledoc """
@@ -115,7 +116,7 @@ defmodule IntGen.CLI.Args do
       |> validate_bounds()
       |> validate_output_file()
 
-    if length(errors) do
+    if length(errors) == 0 do
       :ok
     else
       {:error, errors}
@@ -127,7 +128,7 @@ defmodule IntGen.CLI.Args do
   defp validate_switch_exists(true, _), do: :ok
 
   defp validate_switch_exists(false, arg_description) do
-    {:error, "The #{arg_description} has not been specified"}
+    {:error, ["The #{arg_description} has not been specified"]}
   end
 
   @spec validate_switch_exists(parsed_switches(), atom(), String.t()) :: validation_response()
@@ -135,16 +136,41 @@ defmodule IntGen.CLI.Args do
     validate_switch_exists(Keyword.has_key?(parsed_args, arg_key), arg_description)
   end
 
+  #Validates if multiple switches exist, returning a message for each non-existent
+  #switch. The switches are specified by a list of tuples, where the first element
+  #is the switch key and the second element is the switch description
+  @spec validate_switches_exist(parsed_switches(), keyword()) :: validation_response()
+  defp validate_switches_exist(parsed_switches, switches) do
+    #Validate each switch in the list of key-description pairs
+    errors = Enum.reduce(switches, [], fn switch, messages ->
+      switch_key = elem(switch, 0)
+      switch_description = elem(switch, 1)
+
+      case validate_switch_exists(parsed_switches, switch_key, switch_description) do
+        :ok -> []
+        {:error, error_messages} -> error_messages ++ messages
+      end
+    end)
+
+    #Return a validation response depending how the switch validation went
+    if length(errors) == 0 do
+      :ok
+    else
+      {:error, errors}
+    end
+  end
+
   # Validates the count parameter
   @spec validate_count({parsed_switches(), parsed_additional_args(), list(String.t())}) ::
-          validation_response()
+          validation_errors()
   defp validate_count({parsed_args, other_args, errors}) do
     # First we check if the count exists, then we check its value
     with :ok <- validate_switch_exists(parsed_args, :count, "count"),
          :ok <- validate_count_value(Keyword.get(parsed_args, :count)) do
-      :ok
+      {parsed_args, other_args, errors}
     else
-      err -> {parsed_args, other_args, [err | errors]}
+      {:error, message} ->
+        {parsed_args, other_args, message ++ errors}
     end
   end
 
@@ -155,24 +181,26 @@ defmodule IntGen.CLI.Args do
   end
 
   defp validate_count_value(_) do
-    {:error, "The count must be a positive integer"}
+    {:error, ["The count must be a positive integer"]}
   end
 
   # Validates the bounds parameters
   @spec validate_bounds({parsed_switches(), parsed_additional_args(), list(String.t())}) ::
-          validation_response()
+    validation_errors()
   defp validate_bounds({parsed_args, other_args, errors}) do
     # Check if the bounds exist then check if the bound values make sense
-    with :ok <- validate_switch_exists(parsed_args, :lower_bound, "lower bound"),
-         :ok <- validate_switch_exists(parsed_args, :upper_bound, "upper bound"),
+    switches = [lower_bound: "lower bound", upper_bound: "upper bound"]
+
+    with :ok <- validate_switches_exist(parsed_args, switches),
          :ok <-
            validate_bounds_values(
              Keyword.get(parsed_args, :lower_bound),
              Keyword.get(parsed_args, :upper_bound)
            ) do
-      :ok
+      {parsed_args, other_args, errors}
     else
-      err -> {parsed_args, other_args, err ++ errors}
+      {:error, messages} ->
+        {parsed_args, other_args, messages ++ errors}
     end
   end
 
@@ -210,14 +238,14 @@ defmodule IntGen.CLI.Args do
 
   # Validates the output file parameter
   @spec validate_output_file({parsed_switches(), parsed_additional_args(), list(String.t())}) ::
-          validation_response()
+    validation_errors()
   defp validate_output_file({parsed_args, other_args, errors}) do
     # Check if the file parameter exists and then verify that the file value is valid
     with :ok <- validate_file_exists(other_args),
          :ok <- validate_file_value(hd(other_args)) do
-      :ok
+      {parsed_args, other_args, errors}
     else
-      err -> {parsed_args, other_args, [err | errors]}
+      {:error, messages} -> {parsed_args, other_args, messages ++ errors}
     end
   end
 
@@ -226,7 +254,7 @@ defmodule IntGen.CLI.Args do
   defp validate_file_exists(other_args) when length(other_args) > 0, do: :ok
 
   defp validate_file_exists(_) do
-    {:error, "The output file must be specified"}
+    {:error, ["The output file must be specified"]}
   end
 
   # Validates the file value. Since I don't see any way to validate a file path,
@@ -235,6 +263,6 @@ defmodule IntGen.CLI.Args do
   defp validate_file_value(file) when is_binary(file), do: :ok
 
   defp validate_file_value(_) do
-    {:error, "The output file must be a string"}
+    {:error, ["The output file must be a string"]}
   end
 end
