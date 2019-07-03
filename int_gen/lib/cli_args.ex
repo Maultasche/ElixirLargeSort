@@ -136,23 +136,24 @@ defmodule IntGen.CLI.Args do
     validate_switch_exists(Keyword.has_key?(parsed_args, arg_key), arg_description)
   end
 
-  #Validates if multiple switches exist, returning a message for each non-existent
-  #switch. The switches are specified by a list of tuples, where the first element
-  #is the switch key and the second element is the switch description
+  # Validates if multiple switches exist, returning a message for each non-existent
+  # switch. The switches are specified by a list of tuples, where the first element
+  # is the switch key and the second element is the switch description
   @spec validate_switches_exist(parsed_switches(), keyword()) :: validation_response()
   defp validate_switches_exist(parsed_switches, switches) do
-    #Validate each switch in the list of key-description pairs
-    errors = Enum.reduce(switches, [], fn switch, messages ->
-      switch_key = elem(switch, 0)
-      switch_description = elem(switch, 1)
+    # Validate each switch in the list of key-description pairs
+    errors =
+      Enum.reduce(switches, [], fn switch, messages ->
+        switch_key = elem(switch, 0)
+        switch_description = elem(switch, 1)
 
-      case validate_switch_exists(parsed_switches, switch_key, switch_description) do
-        :ok -> []
-        {:error, error_messages} -> error_messages ++ messages
-      end
-    end)
+        case validate_switch_exists(parsed_switches, switch_key, switch_description) do
+          :ok -> []
+          {:error, error_messages} -> error_messages ++ messages
+        end
+      end)
 
-    #Return a validation response depending how the switch validation went
+    # Return a validation response depending how the switch validation went
     if length(errors) == 0 do
       :ok
     else
@@ -186,7 +187,7 @@ defmodule IntGen.CLI.Args do
 
   # Validates the bounds parameters
   @spec validate_bounds({parsed_switches(), parsed_additional_args(), list(String.t())}) ::
-    validation_errors()
+          validation_errors()
   defp validate_bounds({parsed_args, other_args, errors}) do
     # Check if the bounds exist then check if the bound values make sense
     switches = [lower_bound: "lower bound", upper_bound: "upper bound"]
@@ -214,7 +215,9 @@ defmodule IntGen.CLI.Args do
 
   # This clause gets called when both bounds are integers but the lower bound is above
   # the upper bound
-  defp validate_bounds_values(lower_bound, upper_bound) when lower_bound >= upper_bound do
+  defp validate_bounds_values(lower_bound, upper_bound)
+       when is_integer(lower_bound) and
+              is_integer(upper_bound) and lower_bound >= upper_bound do
     {:error, ["The lower bound cannot exceed the upper bound"]}
   end
 
@@ -238,7 +241,7 @@ defmodule IntGen.CLI.Args do
 
   # Validates the output file parameter
   @spec validate_output_file({parsed_switches(), parsed_additional_args(), list(String.t())}) ::
-    validation_errors()
+          validation_errors()
   defp validate_output_file({parsed_args, other_args, errors}) do
     # Check if the file parameter exists and then verify that the file value is valid
     with :ok <- validate_file_exists(other_args),

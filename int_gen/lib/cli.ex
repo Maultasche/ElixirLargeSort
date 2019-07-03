@@ -14,7 +14,7 @@ defmodule IntGen.CLI do
     |> process()
   end
 
-  #Starts the application processing based on the parsing of the arguments
+  # Starts the application processing based on the parsing of the arguments
   defp process({:ok, :help}) do
     output_usage_info()
 
@@ -32,14 +32,14 @@ defmodule IntGen.CLI do
   defp process({:ok, options}) do
     integer_range = options.lower_bound..options.upper_bound
 
-    #Create the random integer stream
+    # Create the random integer stream
     random_stream = IntGen.random_integer_stream(integer_range)
 
-    #Create the integer file using the random integer stream
+    # Create the integer file using the random integer stream
     IntGen.create_integer_file(options.output_file, options.count, random_stream)
   end
 
-  #Prints usage information
+  # Prints usage information
   defp output_usage_info() do
     IO.puts("""
     usage: int_gen --count <count> --lower_bound <lower bound> --upper_bound <upper bound> <file>
