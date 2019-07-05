@@ -42,9 +42,9 @@ defmodule IntGen.CLI do
   # Prints usage information
   defp output_usage_info() do
     IO.puts("""
-    usage: int_gen --count <count> --lower_bound <lower bound> --upper_bound <upper bound> <file>
+    usage: int_gen --count <count> --lower-bound <lower bound> --upper-bound <upper bound> <file>
 
-    example: int_gen --count 100 --lower_bound -100 --upper_bound 100 "random_integers.txt"
+    example: int_gen --count 100 --lower-bound -100 --upper-bound 100 "random_integers.txt"
     """)
   end
 end
