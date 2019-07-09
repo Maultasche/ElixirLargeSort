@@ -24,6 +24,7 @@ defmodule IntGen.MixProject do
   defp deps do
     [
       {:largesort_shared, path: "../largesort_shared"},
+      {:progress_bar, "~> 2.0"},
       {:mox, "~> 0.5.1", only: [:test]}
     ]
   end
