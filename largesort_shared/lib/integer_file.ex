@@ -25,6 +25,8 @@ defmodule LargeSort.Shared.IntegerFile do
   @impl IntegerFileBehavior
   @spec create_integer_file_stream(String.t()) :: Enumerable.t()
   def create_integer_file_stream(path) do
+    create_file_directory(path)
+
     File.stream!(path, [:utf8], :line)
   end
 
@@ -49,4 +51,17 @@ defmodule LargeSort.Shared.IntegerFile do
     |> Stream.map(&(&1 <> "\n"))
     |> Stream.into(out_stream)
   end
+
+  #Creates the directory for a file path, if it doesn't already exist
+  defp create_file_directory(file_path, directory_exists \\ nil)
+  defp create_file_directory(file_path, nil) do
+    create_file_directory(file_path, File.dir?(file_path))
+  end
+  defp create_file_directory(_, true), do: :ok
+  defp create_file_directory(file_path, false) do
+    directory = Path.dirname(file_path)
+
+    File.mkdir_p(directory)
+  end
+
 end
