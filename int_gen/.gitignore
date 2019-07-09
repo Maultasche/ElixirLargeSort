@@ -22,3 +22,11 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 int_gen-*.tar
 
+# Ignore the data directory
+/data/
+
+# Ignore the output directory
+/output/
+
+# Ignore the application bundle
+int_gen
