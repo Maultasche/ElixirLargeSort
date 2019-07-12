@@ -32,6 +32,11 @@ defmodule IntGen do
   in the random integer stream or enumerable to fulfill this number, then only the
   max possible number of integers are written.
   - integers: A stream or enumerable containing the integers to be written
+
+  ## Returns
+
+  :ok
+
   """
   @spec create_integer_file(String.t(), non_neg_integer(), Enumerable.t()) :: :ok
   def create_integer_file(path, num, integers) do
