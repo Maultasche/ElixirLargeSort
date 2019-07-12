@@ -1,0 +1,5 @@
+%{
+  "decimal": {:hex, :decimal, "1.8.0", "ca462e0d885f09a1c5a342dbd7c1dcf27ea63548c65a65e67334f4b61803822e", [:mix], [], "hexpm"},
+  "mox": {:hex, :mox, "0.5.1", "f86bb36026aac1e6f924a4b6d024b05e9adbed5c63e8daa069bd66fb3292165b", [:mix], [], "hexpm"},
+  "progress_bar": {:hex, :progress_bar, "2.0.0", "447285f533b4b8717881fdb7160c7360c2f2ab57276f8904ce6d40482857e573", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: false]}], "hexpm"},
+}

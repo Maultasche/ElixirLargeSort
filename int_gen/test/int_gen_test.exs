@@ -4,6 +4,8 @@ defmodule IntGenTest do
 
   import Mox
 
+  alias LargeSort.Shared.TestStream
+
   @num_stream_elements 1000
 
   describe "random_integer_stream -" do
@@ -172,7 +174,7 @@ defmodule IntGenTest do
     # Tests creating an integer file
     defp test_integer_file(path, num_of_integers, integers, verify) do
       # Create the test stream
-      {test_device, test_stream} = create_test_stream()
+      {test_device, test_stream} = TestStream.create_test_stream()
 
       # Setup the IntegerFile mock
       IntGen.IntegerFileMock
@@ -227,7 +229,7 @@ defmodule IntGenTest do
 
     # Verifies that the integers were written correctly
     defp verify_written_integers(integers, written_data) do
-      written_integers = stream_data_to_integers(written_data)
+      written_integers = TestStream.stream_data_to_integers(written_data, " ")
 
       # Verify that the exact integer order matches
       written_integers
@@ -243,34 +245,13 @@ defmodule IntGenTest do
     # Verifies that the correct number of integers within a certain range
     # were written
     defp verify_written_integers_range(expected_count, integer_range, written_data) do
-      written_integers = stream_data_to_integers(written_data)
+      written_integers = TestStream.stream_data_to_integers(written_data, " ")
 
       # Assert that the number of integers is as expected
       assert Enum.count(written_integers) == expected_count
 
       # Assert that each integer is in the expected range
       Enum.each(written_integers, fn integer -> assert integer in integer_range end)
-    end
-
-    # Converts integer stream data to an enumerable containing integers
-    defp stream_data_to_integers(data) do
-      data
-      |> String.trim()
-      |> String.split(" ")
-      |> Stream.reject(fn line -> line == "" end)
-      |> Enum.map(&String.to_integer/1)
-    end
-
-    # Creates a test stream that reads from and writes to a string I/O device
-    # Returns both the stream and the device that it wraps so that the contents
-    # of the device can be read later on
-    @spec create_test_stream() :: {:ok, Enumerable.t()}
-    defp create_test_stream() do
-      # Open a string I/O device
-      {:ok, device} = StringIO.open("")
-
-      # Turn the string I/O device into a text line stream
-      {device, IO.stream(device, :line)}
     end
   end
 end
