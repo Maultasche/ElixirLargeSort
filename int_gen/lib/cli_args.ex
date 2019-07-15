@@ -72,7 +72,7 @@ defmodule IntGen.CLI.Args do
   # on whether the help switch was set. This function assumes that argument validation
   # was successful.
   @spec args_to_options(parsed_switches(), parsed_additional_args()) ::
-          Options.t() | :help
+          {:ok, Options.t() | :help}
   defp args_to_options(parsed_args, additional_args) do
     # If the help switch was set, return :help, otherwise convert the arguments
     # to an options struct
