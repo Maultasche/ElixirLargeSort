@@ -30,3 +30,6 @@ int_gen-*.tar
 
 # Ignore the application bundle
 int_gen
+
+# Ignore the ElixirLS cache files
+.elixir_ls/

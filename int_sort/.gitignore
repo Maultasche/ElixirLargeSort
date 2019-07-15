@@ -29,4 +29,7 @@ int_gen-*.tar
 /output/
 
 # Ignore the application bundle
-int_gen
+int_sort
+
+# Ignore the ElixirLS cache files
+.elixir_ls/
