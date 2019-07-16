@@ -37,7 +37,7 @@ defmodule IntGen.CLI.Args do
   @spec parse_args(list(String.t())) :: options_response()
   def parse_args(argv) do
     OptionParser.parse(argv,
-      switches: [help: :boolean, count: :integer, lower_bound: :integer, upper_bound: :integer],
+      strict: [help: :boolean, count: :integer, lower_bound: :integer, upper_bound: :integer],
       aliases: [h: :help, c: :count, l: :lower_bound, u: :upper_bound]
     )
     |> args_to_options()
@@ -264,8 +264,4 @@ defmodule IntGen.CLI.Args do
   # I'm just going to check that the file path is a binary
   @spec validate_file_value(any()) :: validation_response()
   defp validate_file_value(file) when is_binary(file), do: :ok
-
-  defp validate_file_value(_) do
-    {:error, ["The output file must be a string"]}
-  end
 end
