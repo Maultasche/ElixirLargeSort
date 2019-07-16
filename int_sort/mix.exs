@@ -31,7 +31,7 @@ defmodule IntSort.MixProject do
 
   defp escript_config do
     [
-      main_module: IntGen.CLI
+      main_module: IntSort.CLI
     ]
   end
 
