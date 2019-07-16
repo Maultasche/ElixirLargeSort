@@ -52,6 +52,26 @@ defmodule LargeSort.Shared.IntegerFile do
     |> Stream.into(out_stream)
   end
 
+  @doc """
+  Creates a stream that reads integers from an integer stream
+
+  ## Parameters
+
+  - integer_stream: A stream that reads lines of integer text,
+    most likely lines of text from an integer file
+
+  ## Returns
+
+  A stream that emits the integers in the integer file
+  """
+  @impl IntegerFileBehavior
+  @spec read_stream(Enumerable.t()) :: Enumerable.t()
+  def read_stream(integer_stream) do
+    integer_stream
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&String.to_integer/1)
+  end
+
   #Creates the directory for a file path, if it doesn't already exist
   defp create_file_directory(file_path, directory_exists \\ nil)
   defp create_file_directory(file_path, nil) do
