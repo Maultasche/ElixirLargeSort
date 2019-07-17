@@ -34,6 +34,7 @@ defmodule IntSort.CLI do
   defp process({:ok, options}) do
     IO.puts "Options: #{inspect(options)}"
 
+
     # integer_range = options.lower_bound..options.upper_bound
 
     # # Create the random integer stream
@@ -63,6 +64,10 @@ defmodule IntSort.CLI do
     example: int_sort --input-file "data/random_integers.txt" --chunk-size 1000 "sorted_integers.txt"
     """)
   end
+
+  # def create_chunks(options) do
+
+  # end
 
   # # Updates the progress bar
   # # This clause updates the progress bar occasionally when a larger number of integers

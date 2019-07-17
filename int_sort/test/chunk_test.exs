@@ -322,6 +322,66 @@ defmodule IntSort.ChunkTest do
     end
   end
 
+  describe "chunk_file_stream -" do
+    test "Create a chunk file stream" do
+      test_chunk_file_stream(1, 1)
+      test_chunk_file_stream(10, 12)
+      test_chunk_file_stream(4, 2)
+    end
+
+    @test_output_dir "output"
+
+    @spec test_chunk_file_stream(non_neg_integer(), non_neg_integer()) :: :ok
+    defp test_chunk_file_stream(gen, chunk_num) do
+      # Create any mocks that need to be created
+      chunk_file_stream_mocks()
+
+      # Call chunk_file_stream and get the stream
+      chunk_stream = Chunk.chunk_file_stream(gen, chunk_num, &chunk_file_name/2, @test_output_dir)
+
+      # Verify the results
+      verify_chunk_stream_results(chunk_stream, gen, chunk_num)
+    end
+
+    # Mocks any modules that need to be mocked
+    @spec chunk_file_stream_mocks() :: :ok
+    defp chunk_file_stream_mocks() do
+      # Mock IntegerFileMock so that returns a dummy stream when creating
+      # an integer file stream. This dummy stream will contain the path
+      # passed to the function so that we can later read it and verify
+      # that the correct parameters were passed
+      IntGen.IntegerFileMock
+      |> expect(
+        :create_integer_file_stream,
+        fn path ->
+          [path]
+        end
+      )
+    end
+
+    # Creates a test chunk file name
+    @spec chunk_file_name(non_neg_integer(), non_neg_integer()) :: String.t()
+    defp chunk_file_name(gen, chunk_num) do
+      "gen#{gen}chunk#{chunk_num}.txt"
+    end
+
+    # Verifies the results of the chunk stream test
+    @spec verify_chunk_stream_results(Enum.t(), list(integer()), non_neg_integer()) :: :ok
+    defp verify_chunk_stream_results(chunk_stream, gen, chunk_num) do
+      # Get the contents of the chunk stream
+      [file_path] = Enum.to_list(chunk_stream)
+
+      # Get the expected file path
+      expected_file_path = Path.join(@test_output_dir, chunk_file_name(gen, chunk_num))
+
+      # Ensure that the expected file path matches the actual file path
+      assert file_path == expected_file_path
+
+      :ok
+    end
+
+  end
+
   # Creates chunks for use in testing
   @spec create_test_chunks(non_neg_integer(), pos_integer()) :: list(list(integer()))
   defp create_test_chunks(num_chunks, chunk_size) do
