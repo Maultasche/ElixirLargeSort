@@ -1,4 +1,4 @@
-defmodule IntSortTest do
+defmodule IntSort.Test do
   use ExUnit.Case
   doctest IntSort
 
@@ -8,4 +8,5 @@ defmodule IntSortTest do
 
       assert file_name == "gen3-7.txt"
     end
+  end
 end
