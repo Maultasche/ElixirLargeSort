@@ -179,7 +179,7 @@ defmodule IntGenTest do
       # Setup the IntegerFile mock
       IntGen.IntegerFileMock
       |> expect(
-        :create_integer_file_stream,
+        :integer_file_stream,
         fn actual_path ->
           verify_create_file_stream(path, actual_path, test_stream)
         end

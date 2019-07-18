@@ -41,7 +41,7 @@ defmodule IntGen do
   @spec create_integer_file(String.t(), non_neg_integer(), Enumerable.t()) :: :ok
   def create_integer_file(path, num, integers) do
     # Create the integer file stream
-    file_stream = @integer_file.create_integer_file_stream(path)
+    file_stream = @integer_file.integer_file_stream(path)
 
     # Pipe N integers to the file stream
     integers
