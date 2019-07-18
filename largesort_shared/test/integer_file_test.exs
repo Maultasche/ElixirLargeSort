@@ -6,8 +6,8 @@ defmodule LargeSortShared.Test.IntegerFile do
 
   @test_integer_file_name "test_integer_file.txt"
 
-  #Tests create_integer_file_stream
-  describe "create_integer_file_stream -" do
+  #Tests integer_file_stream
+  describe "integer_file_stream -" do
     setup do
       on_exit(&delete_test_file/0)
     end
@@ -15,7 +15,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     test "Create integer file stream and write to it" do
       #Create the file stream and write some test data to the file stream
       test_data = 1..10
-      file_stream = IntegerFile.create_integer_file_stream(@test_integer_file_name)
+      file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
       file_stream
       |> write_data_to_stream(test_data)
@@ -29,14 +29,14 @@ defmodule LargeSortShared.Test.IntegerFile do
     test "Create integer file stream and read from it" do
       #Create the file stream and write some test data to the file stream
       test_data = 1..10
-      file_stream = IntegerFile.create_integer_file_stream(@test_integer_file_name)
+      file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
       file_stream
       |> write_data_to_stream(test_data)
       |> Stream.run()
 
       #Create a new file stream, which we will use to read from the file
-      file_stream = IntegerFile.create_integer_file_stream(@test_integer_file_name)
+      file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
       #Verify that the stream can read from the file correctly
       verify_integer_stream(file_stream, test_data)
@@ -66,7 +66,7 @@ defmodule LargeSortShared.Test.IntegerFile do
 
     defp test_write_integers_to_stream(test_data) do
       #Create the file stream
-      file_stream = IntegerFile.create_integer_file_stream(@test_integer_file_name)
+      file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
       #Write the test data to the file stream
       test_data

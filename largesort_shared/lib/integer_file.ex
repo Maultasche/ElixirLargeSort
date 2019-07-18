@@ -23,8 +23,8 @@ defmodule LargeSort.Shared.IntegerFile do
   A stream that can be used to read from or write to the file
   """
   @impl IntegerFileBehavior
-  @spec create_integer_file_stream(String.t()) :: Enumerable.t()
-  def create_integer_file_stream(path) do
+  @spec integer_file_stream(String.t()) :: Enumerable.t()
+  def integer_file_stream(path) do
     create_file_directory(path)
 
     File.stream!(path, [:utf8], :line)
