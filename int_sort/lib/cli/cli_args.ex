@@ -37,7 +37,12 @@ defmodule IntSort.CLI.Args do
   @spec parse_args(list(String.t())) :: options_response()
   def parse_args(argv) do
     OptionParser.parse(argv,
-      strict: [help: :boolean, input_file: :string, chunk_size: :integer, keep_intermediate: :boolean],
+      strict: [
+        help: :boolean,
+        input_file: :string,
+        chunk_size: :integer,
+        keep_intermediate: :boolean
+      ],
       aliases: [h: :help, i: :input_file, c: :chunk_size, k: :keep_intermediate]
     )
     |> args_to_options()
@@ -152,7 +157,8 @@ defmodule IntSort.CLI.Args do
 
   # Validates the chunk size value
   @spec validate_chunk_size_value(integer()) :: validation_response()
-  defp validate_chunk_size_value(chunk_size_value) when is_integer(chunk_size_value) and chunk_size_value > 0 do
+  defp validate_chunk_size_value(chunk_size_value)
+       when is_integer(chunk_size_value) and chunk_size_value > 0 do
     :ok
   end
 

@@ -4,6 +4,7 @@ defmodule IntSort.ChunkTest do
   alias IntSort.Chunk
   alias LargeSort.Shared.TestStream
   alias LargeSort.Shared.TestData
+  alias IntSort.Test
 
   import Mox
 
@@ -19,11 +20,11 @@ defmodule IntSort.ChunkTest do
     end
 
     test "Large number of integers with moderate chunk size " do
-      test_chunking(100000, 100)
+      test_chunking(100_000, 100)
     end
 
     test "Large number of integers with small chunk size " do
-      test_chunking(100000, 5)
+      test_chunking(100_000, 5)
     end
 
     test "Small number of integers with small chunk size " do
@@ -49,7 +50,8 @@ defmodule IntSort.ChunkTest do
     @spec test_chunking(non_neg_integer(), pos_integer()) :: non_neg_integer()
     defp test_chunking(num_integers, chunk_size) do
       # Randomly generate the integers needed for the test
-      integers = TestData.random_integer_stream(-1000..1000)
+      integers =
+        TestData.random_integer_stream(-1000..1000)
         |> Enum.take(num_integers)
 
       # Create any mocks that need to be created
@@ -68,7 +70,7 @@ defmodule IntSort.ChunkTest do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntGen.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
 
       :ok
     end
@@ -77,7 +79,7 @@ defmodule IntSort.ChunkTest do
     @spec verify_chunk_results(Enum.t(), list(integer()), non_neg_integer()) :: :ok
     defp verify_chunk_results(chunk_stream, integers, chunk_size) do
       # Calculate expected chunks
-      expected_chunks = expected_chunks(integers, chunk_size)
+      expected_chunks = Test.Common.expected_chunks(integers, chunk_size)
 
       # Retrieve the actual chunks
       actual_chunks = Enum.to_list(chunk_stream)
@@ -89,12 +91,6 @@ defmodule IntSort.ChunkTest do
       |> Enum.each(fn {expected, actual} -> assert expected == actual end)
 
       :ok
-    end
-
-    #Calculates the chunks that should be created
-    @spec expected_chunks(list(integer()), pos_integer()) :: list(list(integer()))
-    defp expected_chunks(integers, chunk_size) do
-      Enum.chunk_every(integers, chunk_size)
     end
   end
 
@@ -143,7 +139,8 @@ defmodule IntSort.ChunkTest do
     @spec verify_sort_results(Enum.t(), Enum.t()) :: :ok
     defp verify_sort_results(sorted_chunk_stream, test_chunks) do
       # Calculate expected chunks
-      expected_chunks = test_chunks
+      expected_chunks =
+        test_chunks
         |> Enum.map(&Enum.sort/1)
 
       # Retrieve the actual chunks
@@ -215,8 +212,8 @@ defmodule IntSort.ChunkTest do
       end
 
       # Call write_chunks_to_separate_streams
-      final_stream = Chunk.write_chunks_to_separate_streams(test_chunks,
-        chunk_gen, create_chunk_stream)
+      final_stream =
+        Chunk.write_chunks_to_separate_streams(test_chunks, chunk_gen, create_chunk_stream)
 
       # Verify the results
       verify_chunk_results(final_stream, test_chunks, chunk_gen, chunk_streams)
@@ -228,15 +225,19 @@ defmodule IntSort.ChunkTest do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntGen.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
 
       :ok
     end
 
     # Verifies the results of the chunking test
-    @spec verify_chunk_results(Enum.t(), list(list(integer())), non_neg_integer(), chunk_stream_map()) :: :ok
+    @spec verify_chunk_results(
+            Enum.t(),
+            list(list(integer())),
+            non_neg_integer(),
+            chunk_stream_map()
+          ) :: :ok
     defp verify_chunk_results(final_stream, test_chunks, gen, chunk_streams) do
-
       # Add a verification step to the stream to verify that the final stream
       # output is what we are expecting. Then start processing the stream
       final_stream
@@ -258,7 +259,11 @@ defmodule IntSort.ChunkTest do
       :ok
     end
 
-    @spec verify_stream_output({{list(integer()), pid()}, pos_integer()}, non_neg_integer(), chunk_stream_map()) :: :ok
+    @spec verify_stream_output(
+            {{list(integer()), pid()}, pos_integer()},
+            non_neg_integer(),
+            chunk_stream_map()
+          ) :: :ok
     defp verify_stream_output({{_, actual_chunk_stream}, chunk_num}, gen, test_streams) do
       expected_chunk_stream = get_test_chunk_stream(gen, chunk_num, test_streams)
 
@@ -267,10 +272,11 @@ defmodule IntSort.ChunkTest do
       :ok
     end
 
-    #Extracts the chunks that were actually written from the test streams
+    # Extracts the chunks that were actually written from the test streams
     @spec chunks_from_test_streams(non_neg_integer(), chunk_stream_map()) :: list(list(integer()))
     defp chunks_from_test_streams(_, chunk_streams)
-      when map_size(chunk_streams) == 0, do: []
+         when map_size(chunk_streams) == 0,
+         do: []
 
     defp chunks_from_test_streams(gen, chunk_streams) do
       # Start with a range of chunk streams
@@ -281,8 +287,8 @@ defmodule IntSort.ChunkTest do
       |> Enum.map(&get_string_stream_contents/1)
     end
 
-    #Closes a test stream device and extracts the integer contents of the
-    #stream device, returning it as a list of integers
+    # Closes a test stream device and extracts the integer contents of the
+    # stream device, returning it as a list of integers
     @spec get_string_stream_contents(chunk_stream_value()) :: list(String.t())
     defp get_string_stream_contents({device, _}) do
       # Close the test stream and get the data that was written to it
@@ -292,9 +298,9 @@ defmodule IntSort.ChunkTest do
       TestStream.stream_data_to_integers(written_data)
     end
 
-    #Retrieves a test chunk stream from the map of test chunks streams
-    #This function forms the basis of the callback function that is passed into
-    #create_chunks, so it contains assertions
+    # Retrieves a test chunk stream from the map of test chunks streams
+    # This function forms the basis of the callback function that is passed into
+    # create_chunks, so it contains assertions
     @spec get_test_chunk_stream(pos_integer(), non_neg_integer(), chunk_stream_map()) :: Enum.t()
     defp get_test_chunk_stream(gen, chunk_num, test_streams) do
       key = {gen, chunk_num}
@@ -306,18 +312,19 @@ defmodule IntSort.ChunkTest do
       test_stream
     end
 
-    #Creates a test stream for every generation and chunk number combination
-    #and returns the result in a map
+    # Creates a test stream for every generation and chunk number combination
+    # and returns the result in a map
     @spec create_test_chunk_streams(pos_integer(), non_neg_integer()) :: chunk_stream_map()
     defp create_test_chunk_streams(_, 0), do: %{}
 
     defp create_test_chunk_streams(gen, num_chunks) do
-      test_streams = Enum.map(1..num_chunks, fn chunk_num ->
-        {{gen, chunk_num}, TestStream.create_test_stream()}
-      end)
+      test_streams =
+        Enum.map(1..num_chunks, fn chunk_num ->
+          {{gen, chunk_num}, TestStream.create_test_stream()}
+        end)
 
-      #We should end up with a stream map whose key is the {gen, chunk_num} tuple
-      #and whose value is a tuple containing the stream and the stream device
+      # We should end up with a stream map whose key is the {gen, chunk_num} tuple
+      # and whose value is a tuple containing the stream and the stream device
       Enum.into(test_streams, %{})
     end
   end
@@ -350,9 +357,9 @@ defmodule IntSort.ChunkTest do
       # an integer file stream. This dummy stream will contain the path
       # passed to the function so that we can later read it and verify
       # that the correct parameters were passed
-      IntGen.IntegerFileMock
+      IntSort.IntegerFileMock
       |> expect(
-        :create_integer_file_stream,
+        :integer_file_stream,
         fn path ->
           [path]
         end
@@ -379,7 +386,6 @@ defmodule IntSort.ChunkTest do
 
       :ok
     end
-
   end
 
   # Creates chunks for use in testing

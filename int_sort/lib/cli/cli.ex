@@ -32,8 +32,7 @@ defmodule IntSort.CLI do
   end
 
   defp process({:ok, options}) do
-    IO.puts "Options: #{inspect(options)}"
-
+    IO.puts("Options: #{inspect(options)}")
 
     # integer_range = options.lower_bound..options.upper_bound
 

@@ -69,7 +69,11 @@ defmodule IntSort.Chunk do
 
   A stream that emits tuples containing the chunk and the stream it was written to
   """
-  @spec write_chunks_to_separate_streams(Enum.t(), non_neg_integer(), (non_neg_integer(), non_neg_integer() -> Enum.t())) :: Enum.t()
+  @spec write_chunks_to_separate_streams(
+          Enum.t(),
+          non_neg_integer(),
+          (non_neg_integer(), non_neg_integer() -> Enum.t())
+        ) :: Enum.t()
   def write_chunks_to_separate_streams(chunk_stream, gen, create_chunk_stream) do
     chunk_stream
     # Include the chunk number
@@ -101,15 +105,20 @@ defmodule IntSort.Chunk do
 
   A stream for the chunk file
   """
-  @spec chunk_file_stream(non_neg_integer(), non_neg_integer(), (non_neg_integer(), non_neg_integer() -> String.t()), String.t()) :: Enum.t()
+  @spec chunk_file_stream(
+          non_neg_integer(),
+          non_neg_integer(),
+          (non_neg_integer(), non_neg_integer() -> String.t()),
+          String.t()
+        ) :: Enum.t()
   def chunk_file_stream(gen, num, chunk_file_name, output_path) do
-    #Create a file name for the chunk file
+    # Create a file name for the chunk file
     file_name = chunk_file_name.(gen, num)
 
-    #Combine the file name with the output directory to create a file path
+    # Combine the file name with the output directory to create a file path
     chunk_file_path = Path.join(output_path, file_name)
 
-    #Create a stream for that file path and return it
-    @integer_file.create_integer_file_stream(chunk_file_path)
+    # Create a stream for that file path and return it
+    @integer_file.integer_file_stream(chunk_file_path)
   end
 end

@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :int_sort, :integer_file, IntGen.IntegerFileMock
+config :int_sort, :integer_file, IntSort.IntegerFileMock

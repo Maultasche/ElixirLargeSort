@@ -10,7 +10,14 @@ defmodule IntSort.CLI.Args.Test do
     @test_input_file "data/input.txt"
 
     test "Parsing args with full set of valid arguments" do
-      test_args = ["--input-file", @test_input_file, "--chunk-size", "100", "--keep-intermediate", @test_output_file]
+      test_args = [
+        "--input-file",
+        @test_input_file,
+        "--chunk-size",
+        "100",
+        "--keep-intermediate",
+        @test_output_file
+      ]
 
       expected_options = Options.new(@test_input_file, @test_output_file, 100, true)
 
@@ -50,7 +57,14 @@ defmodule IntSort.CLI.Args.Test do
     end
 
     test "Parsing args with a chunk size of 1" do
-      test_args = ["--input-file", @test_input_file, "--chunk-size", "1", "--keep-intermediate", @test_output_file]
+      test_args = [
+        "--input-file",
+        @test_input_file,
+        "--chunk-size",
+        "1",
+        "--keep-intermediate",
+        @test_output_file
+      ]
 
       expected_options = Options.new(@test_input_file, @test_output_file, 1, true)
 
@@ -58,13 +72,27 @@ defmodule IntSort.CLI.Args.Test do
     end
 
     test "Parsing args with a negative chunk size" do
-      test_args = ["--input-file", @test_input_file, "--chunk-size", "-1", "--keep-intermediate", @test_output_file]
+      test_args = [
+        "--input-file",
+        @test_input_file,
+        "--chunk-size",
+        "-1",
+        "--keep-intermediate",
+        @test_output_file
+      ]
 
       test_with_args_error(test_args, 1)
     end
 
     test "Parsing args with a zero chunk size" do
-      test_args = ["--input-file", @test_input_file, "--chunk-size", "0", "--keep-intermediate", @test_output_file]
+      test_args = [
+        "--input-file",
+        @test_input_file,
+        "--chunk-size",
+        "0",
+        "--keep-intermediate",
+        @test_output_file
+      ]
 
       test_with_args_error(test_args, 1)
     end

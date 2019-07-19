@@ -1,1 +1,1 @@
-Mox.defmock(IntGen.IntegerFileMock, for: LargeSort.Shared.IntegerFileBehavior)
+Mox.defmock(IntSort.IntegerFileMock, for: LargeSort.Shared.IntegerFileBehavior)
