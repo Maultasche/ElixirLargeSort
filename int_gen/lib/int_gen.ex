@@ -2,7 +2,7 @@ defmodule IntGen do
   @moduledoc """
   Contains the functionality for creating a file of random integers
   """
-  @integer_file Application.get_env(:int_gen, :integer_file)
+  @integer_file Application.get_env(:int_gen, :integer_file, LargeSort.Shared.IntegerFile)
 
   @doc """
   Creates a stream that generates an endless number of random integers
