@@ -7,3 +7,9 @@ erl_crash.dump
 *.ez
 *.beam
 /config/*.secret.exs
+
+#Ignore the data directory, which only contains generated files
+/data
+
+#Ignore the output directory, which only contains generated files
+/output
