@@ -89,36 +89,4 @@ defmodule IntSort.Chunk do
       @integer_file.write_integers_to_stream(chunk, chunk_stream) |> Stream.run()
     end)
   end
-
-  @doc """
-  Creates a stream that can be used to read from or write to a chunk file
-
-  ## Parameters
-
-  - gen: The merge generation that this chunk file represents
-  - num: The chunk number in the current generation
-  - chunk_file_name: A function that converts the generation and chunk number
-    to a chunk file name
-  - output_path: The path to the directory in which the chunk file is located
-
-  ## Returns
-
-  A stream for the chunk file
-  """
-  @spec chunk_file_stream(
-          non_neg_integer(),
-          non_neg_integer(),
-          (non_neg_integer(), non_neg_integer() -> String.t()),
-          String.t()
-        ) :: Enum.t()
-  def chunk_file_stream(gen, num, chunk_file_name, output_path) do
-    # Create a file name for the chunk file
-    file_name = chunk_file_name.(gen, num)
-
-    # Combine the file name with the output directory to create a file path
-    chunk_file_path = Path.join(output_path, file_name)
-
-    # Create a stream for that file path and return it
-    @integer_file.integer_file_stream(chunk_file_path)
-  end
 end

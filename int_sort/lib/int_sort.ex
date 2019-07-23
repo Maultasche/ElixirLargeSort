@@ -4,6 +4,7 @@ defmodule IntSort do
   chunk files
   """
   alias IntSort.Chunk
+  alias IntSort.IntermediateFile
 
   @integer_file Application.get_env(:int_sort, :integer_file)
 
@@ -29,7 +30,7 @@ defmodule IntSort do
     |> Chunk.create_chunks(chunk_size)
     |> Chunk.sort_chunks()
     |> Chunk.write_chunks_to_separate_streams(gen, fn gen, chunk_num ->
-      Chunk.chunk_file_stream(gen, chunk_num, &gen_file_name/2, output_dir)
+      IntermediateFile.intermediate_file_stream(gen, chunk_num, &gen_file_name/2, output_dir)
     end)
     |> Stream.with_index(1)
     |> Stream.map(fn {_, chunk_num} -> gen_file_name(gen, chunk_num) end)
