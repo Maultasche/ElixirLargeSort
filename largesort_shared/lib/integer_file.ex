@@ -75,7 +75,9 @@ defmodule LargeSort.Shared.IntegerFile do
   #Creates the directory for a file path, if it doesn't already exist
   defp create_file_directory(file_path, directory_exists \\ nil)
   defp create_file_directory(file_path, nil) do
-    create_file_directory(file_path, File.dir?(file_path))
+    directory = Path.dirname(file_path)
+
+    create_file_directory(file_path, File.dir?(directory))
   end
   defp create_file_directory(_, true), do: :ok
   defp create_file_directory(file_path, false) do
