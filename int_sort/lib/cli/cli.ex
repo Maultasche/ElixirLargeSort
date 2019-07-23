@@ -4,10 +4,13 @@ defmodule IntSort.CLI do
   """
 
   alias IntSort.CLI.Args
+  alias IntSort.CLI.Options
 
   @type parsed_args() :: {keyword(), list(String.t()), list()}
 
   # @progress_update_frequency 1000
+
+  @chunk_gen 1
 
   # This is the main entry point to the application
   def main(argv) do
@@ -34,25 +37,8 @@ defmodule IntSort.CLI do
   defp process({:ok, options}) do
     IO.puts("Options: #{inspect(options)}")
 
-    # integer_range = options.lower_bound..options.upper_bound
-
-    # # Create the random integer stream
-    # random_stream = IntGen.random_integer_stream(integer_range)
-
-    # # Intercept the integer generation for updating the progress bar
-    # random_stream =
-    #   random_stream
-    #   # Add an index onto the number being generated
-    #   |> Stream.with_index()
-    #   # Update the progress bar
-    #   |> Stream.each(fn {_, current_index} ->
-    #     update_progress_bar(current_index + 1, options.count)
-    #   end)
-    #   # Transform the integer-index tuple back to an integer
-    #   |> Stream.map(fn {integer, _} -> integer end)
-
-    # # Create the integer file using the random integer stream
-    # IntGen.create_integer_file(options.output_file, options.count, random_stream)
+    # Create the chunk files
+    create_chunks(options)
   end
 
   # Prints usage information
@@ -64,9 +50,13 @@ defmodule IntSort.CLI do
     """)
   end
 
-  # def create_chunks(options) do
-
-  # end
+  @spec create_chunks(Options.t()) :: list(String.t())
+  defp create_chunks(options) do
+    IntSort.create_chunk_files(options.input_file, Path.dirname(options.output_file),
+      options.chunk_size, @chunk_gen)
+    |> Stream.each(fn file_name -> IO.puts "Generated #{file_name}" end)
+    |> Enum.to_list()
+  end
 
   # # Updates the progress bar
   # # This clause updates the progress bar occasionally when a larger number of integers
