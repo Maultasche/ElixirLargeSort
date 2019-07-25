@@ -72,6 +72,32 @@ defmodule LargeSort.Shared.IntegerFile do
     |> Stream.map(&String.to_integer/1)
   end
 
+  @doc """
+  Counts the number of lines in an raw integer text stream
+
+  This function makes no attempt to parse the integers or determine the
+  validity of the integers in the stream. It just counts the number of
+  items it encounters.
+
+  Note that when the function has completed, all the items will have been
+  read from the stream. So the stream is not likely to be that useful
+  after this function has completed and you'd have to create a new
+  stream with the same data to do anything else with that data.
+
+  ## Parameters
+
+  - integer_stream: A stream that reads lines of integer text,
+    most likely lines of text from an integer file
+
+  ## Returns
+
+  The number of lines found in the stream
+  """
+  @spec integer_count(Enumerable.t()) :: non_neg_integer()
+  def integer_count(integer_stream) do
+    Enum.count(integer_stream)
+  end
+
   #Creates the directory for a file path, if it doesn't already exist
   defp create_file_directory(file_path, directory_exists \\ nil)
   defp create_file_directory(file_path, nil) do

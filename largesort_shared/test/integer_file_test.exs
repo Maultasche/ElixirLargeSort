@@ -138,6 +138,57 @@ defmodule LargeSortShared.Test.IntegerFile do
     end
   end
 
+  describe "integer_count -" do
+    test "Testing with multiple lines of integers" do
+      data = [
+        "234\n",
+        "3\n",
+        "22\n",
+        "-4\n",
+        "8\n",
+        "-33243\n",
+        "87\n",
+        "-93\n",
+        "0\n"
+      ]
+
+      test_integer_count(data, length(data))
+    end
+
+    test "Testing with multiple lines of text" do
+      data = [
+        "The bibble babble bubble\n",
+        "Fluffykins\n",
+        "-1\n",
+        "Snorlax\n",
+        "O93nssLL",
+        "\n",
+        "",
+        "FizzBuzz\n"
+      ]
+
+      test_integer_count(data, length(data))
+    end
+
+    test "Testing with an single line of integers" do
+      data = [ "58\n" ]
+
+      test_integer_count(data, length(data))
+    end
+
+    test "Testing with no lines of integers" do
+      data = []
+
+      test_integer_count(data, length(data))
+    end
+
+    @spec test_integer_count(Enum.t(), non_neg_integer()) :: :ok
+    defp test_integer_count(data, expected_count) do
+      actual_count = IntegerFile.integer_count(data)
+
+      assert actual_count == expected_count
+    end
+  end
   #Deletes the test file
   defp delete_test_file() do
     File.rm!(@test_integer_file_name)
