@@ -22,6 +22,7 @@ defmodule IntSort do
 
   A stream that emits chunk file names
   """
+  @spec create_chunk_files(String.t(), String.t(), pos_integer(), non_neg_integer())
   def create_chunk_files(input_file, output_dir, chunk_size, gen) do
     # Create a stream pipeline that reads in integers from the input stream,
     # chunks them, sorts them, and then writes the chunks to files
@@ -34,6 +35,11 @@ defmodule IntSort do
     end)
     |> Stream.with_index(1)
     |> Stream.map(fn {_, chunk_num} -> gen_file_name(gen, chunk_num) end)
+  end
+
+  def integer_count(input_file) do
+    @integer_file.integer_file_stream(input_file)
+    |> @integer_file.integer_count()
   end
 
   @doc """

@@ -10,7 +10,11 @@ defmodule IntSort.CLI do
 
   # @progress_update_frequency 1000
 
+  # The generation number for the chunking process
   @chunk_gen 1
+
+  # The maximum number of intermediate files to be merged at once
+  #@merge_files 10
 
   # This is the main entry point to the application
   def main(argv) do
@@ -35,10 +39,8 @@ defmodule IntSort.CLI do
   end
 
   defp process({:ok, options}) do
-    IO.puts("Options: #{inspect(options)}")
-
     # Create the chunk files
-    create_chunks(options)
+    create_chunks(options) |> Stream.run()
   end
 
   # Prints usage information
@@ -50,12 +52,11 @@ defmodule IntSort.CLI do
     """)
   end
 
-  @spec create_chunks(Options.t()) :: list(String.t())
+  @spec create_chunks(Options.t()) :: Enum.t()
   defp create_chunks(options) do
     IntSort.create_chunk_files(options.input_file, Path.dirname(options.output_file),
       options.chunk_size, @chunk_gen)
     |> Stream.each(fn file_name -> IO.puts "Generated #{file_name}" end)
-    |> Enum.to_list()
   end
 
   # # Updates the progress bar
