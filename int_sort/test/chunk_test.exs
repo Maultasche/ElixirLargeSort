@@ -329,6 +329,46 @@ defmodule IntSort.ChunkTest do
     end
   end
 
+  describe "num_chunks -" do
+    test "Calculating the number of chunks when the integers are evenly divisible by the chunk size" do
+      test_chunk_calculation(100, 10, 10)
+    end
+
+    test "Calculating the number of chunks when the integers are not evenly divisible by the chunk size" do
+      test_chunk_calculation(100, 9, 12)
+      test_chunk_calculation(23, 10, 3)
+    end
+
+    test "Calculating the number of chunks when the chunk size is larger than the integers" do
+      test_chunk_calculation(18, 25, 1)
+    end
+
+    test "Calculating the number of chunks when the chunk size is 1" do
+      test_chunk_calculation(15, 1, 15)
+    end
+
+    test "Calculating the number of chunks when the number of integers is 1" do
+      test_chunk_calculation(1, 10, 1)
+    end
+
+    test "Calculating the number of chunks when the number of integers is 1 and the chunk size is 1" do
+      test_chunk_calculation(1, 1, 1)
+    end
+
+    test "Calculating the number of chunks when the number of integers is 0" do
+      test_chunk_calculation(0, 10, 0)
+    end
+
+    @spec test_chunk_calculation(non_neg_integer(), pos_integer(), non_neg_integer()) :: :ok
+    defp test_chunk_calculation(integer_count, chunk_size, expected_chunk_count) do
+      chunk_count = Chunk.num_chunks(integer_count, chunk_size)
+
+      assert chunk_count == expected_chunk_count
+
+      :ok
+    end
+  end
+
   # Creates chunks for use in testing
   @spec create_test_chunks(non_neg_integer(), pos_integer()) :: list(list(integer()))
   defp create_test_chunks(num_chunks, chunk_size) do

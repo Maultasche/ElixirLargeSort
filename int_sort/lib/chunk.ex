@@ -89,4 +89,21 @@ defmodule IntSort.Chunk do
       @integer_file.write_integers_to_stream(chunk, chunk_stream) |> Stream.run()
     end)
   end
+
+  @doc """
+  Calculates the number of chunks that will result from a chunking operation
+
+  ## Parameters
+
+  num_integers: the number of integers to be chunked
+  chunk_size: the size of each chunk
+
+  ## Returns
+
+  The number of expected chunks
+  """
+  @spec num_chunks(non_neg_integer(), pos_integer()) :: non_neg_integer()
+  def num_chunks(num_integers, chunk_size) do
+    ceil(num_integers / chunk_size)
+  end
 end
