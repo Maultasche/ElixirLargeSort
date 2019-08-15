@@ -9,7 +9,8 @@ defmodule IntSort.CLI do
 
   @type parsed_args() :: {keyword(), list(String.t()), list()}
 
-  # @progress_update_frequency 1000
+  # The number of times the progress bar will update between 0% and 100%
+  @progress_updates 1000
 
   # The generation number for the chunking process
   @chunk_gen 1
@@ -43,11 +44,14 @@ defmodule IntSort.CLI do
     # Calculate the number of integers and chunks in the input file
     display_integer_counting_message()
 
-    integer_chunk_counts(options.input_file, options.chunk_size)
-    |> display_integer_counting_result()
+    {num_integers, num_chunks} =
+      integer_chunk_counts(options.input_file, options.chunk_size)
+      |> display_integer_counting_result()
 
     # Create the chunk files
-    create_chunks(options) |> Stream.run()
+    create_chunks(options, num_chunks)
+    # Start stream processing
+    |> Stream.run()
   end
 
   # Prints usage information
@@ -59,11 +63,22 @@ defmodule IntSort.CLI do
     """)
   end
 
-  @spec create_chunks(Options.t()) :: Enum.t()
-  defp create_chunks(options) do
+  @spec create_chunks(Options.t(), non_neg_integer()) :: Enum.t()
+  defp create_chunks(options, num_chunks) do
+    IO.puts "Creating Chunk Files"
+
+    # Calculate the progress update frequency for chunk creation
+    update_frequency = progress_update_frequency(num_chunks, @progress_updates)
+
+    # Create the chunk files
     IntSort.create_chunk_files(options.input_file, Path.dirname(options.output_file),
       options.chunk_size, @chunk_gen)
-    |> Stream.each(fn file_name -> IO.puts "Generated #{file_name}" end)
+    # Number each chunk
+    |> Stream.with_index(1)
+    # Update the progress bar after each chunk has been processed
+    |> Stream.each(fn {_, chunk_num} -> update_progress_bar(chunk_num, num_chunks, update_frequency) end)
+    # Transform the stream back into chunk file names
+    |> Stream.map(fn {chunk_file, _} -> chunk_file end)
   end
 
   defp integer_chunk_counts(input_file, chunk_size) do
@@ -77,35 +92,45 @@ defmodule IntSort.CLI do
     IO.puts "Determining the number of integers and chunks in the input file..."
   end
 
-  defp display_integer_counting_result({integers, chunks}) do
+  defp display_integer_counting_result(data = {integers, chunks}) do
     IO.puts "Number of Integers: #{integers}"
     IO.puts "Number of Chunks: #{chunks}"
+
+    data
   end
 
-  # # Updates the progress bar
-  # # This clause updates the progress bar occasionally when a larger number of integers
-  # # is generated so that the program doesn't spend all its time on progress bar updates
-  # defp update_progress_bar(current_integer, total_integers)
-  #      when rem(current_integer, @progress_update_frequency) == 0 do
-  #   ProgressBar.render(current_integer, total_integers, progress_bar_format())
-  # end
+  # Calculates the progress update frequency (the number of items that pass between
+  # updates) based on the total number of items and the number of updates that
+  # are to be made to the progress bar
+  defp progress_update_frequency(total_count, num_updates) do
+    ceil(total_count / num_updates)
+  end
 
-  # # Updates the progress bar when all the integers have finished generating.
-  # # Otherwise, it won't show at 100% unless the total happens to be evenly
-  # # divisible by the update frequency
-  # defp update_progress_bar(current_integer, total_integers)
-  #      when current_integer == total_integers do
-  #   ProgressBar.render(current_integer, total_integers, progress_bar_format())
-  # end
+  # Updates the current progress bar
+  # This clause updates the progress bar occasionally when a larger number of items
+  # are being processed so that the program doesn't spend all its time on progress
+  # bar updates
+  defp update_progress_bar(current_count, total_count, update_frequency)
+       when rem(current_count, update_frequency) == 0 do
+    ProgressBar.render(current_count, total_count, progress_bar_format())
+  end
 
-  # # If the current integer does not match the update frequency, don't update
-  # # the progress bar
-  # defp update_progress_bar(_, _), do: :ok
+  # Updates the progress bar when all the items have finished being processed.
+  # Otherwise, it won't show at 100% unless the total happens to be evenly
+  # divisible by the update frequency
+  defp update_progress_bar(current_count, total_count, _)
+       when current_count == total_count do
+    ProgressBar.render(current_count, total_count, progress_bar_format())
+  end
 
-  # # Returns the format of the progress bar
-  # defp progress_bar_format() do
-  #   [
-  #     suffix: :count
-  #   ]
-  # end
+  # If the current item count does not match the update frequency, don't update
+  # the progress bar
+  defp update_progress_bar(_, _, _), do: :ok
+
+  # Returns the format of the progress bar
+  defp progress_bar_format() do
+    [
+      suffix: :count
+    ]
+  end
 end
