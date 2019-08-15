@@ -5,6 +5,7 @@ defmodule IntSort.CLI do
 
   alias IntSort.CLI.Args
   alias IntSort.CLI.Options
+  alias IntSort.Chunk
 
   @type parsed_args() :: {keyword(), list(String.t()), list()}
 
@@ -39,6 +40,12 @@ defmodule IntSort.CLI do
   end
 
   defp process({:ok, options}) do
+    # Calculate the number of integers and chunks in the input file
+    display_integer_counting_message()
+
+    integer_chunk_counts(options.input_file, options.chunk_size)
+    |> display_integer_counting_result()
+
     # Create the chunk files
     create_chunks(options) |> Stream.run()
   end
@@ -57,6 +64,22 @@ defmodule IntSort.CLI do
     IntSort.create_chunk_files(options.input_file, Path.dirname(options.output_file),
       options.chunk_size, @chunk_gen)
     |> Stream.each(fn file_name -> IO.puts "Generated #{file_name}" end)
+  end
+
+  defp integer_chunk_counts(input_file, chunk_size) do
+    integer_count = IntSort.integer_count(input_file)
+    chunk_count = Chunk.num_chunks(integer_count, chunk_size)
+
+    {integer_count, chunk_count}
+  end
+
+  defp display_integer_counting_message() do
+    IO.puts "Determining the number of integers and chunks in the input file..."
+  end
+
+  defp display_integer_counting_result({integers, chunks}) do
+    IO.puts "Number of Integers: #{integers}"
+    IO.puts "Number of Chunks: #{chunks}"
   end
 
   # # Updates the progress bar
