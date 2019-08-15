@@ -70,7 +70,7 @@ defmodule IntGen.CLI do
   # updates) based on the total number of integers and the number of updates that
   # are to be made to the progress bar
   defp progress_update_frequency(total_integers, num_updates) do
-    floor(total_integers / num_updates)
+    ceil(total_integers / num_updates)
   end
 
   # Updates the progress bar
