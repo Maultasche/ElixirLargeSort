@@ -7,7 +7,8 @@ defmodule IntGen.CLI do
 
   @type parsed_args() :: {keyword(), list(String.t()), list()}
 
-  @progress_update_frequency 1000
+  # The number of times the progress bar will update between 0% and 100%
+  @progress_updates 1000
 
   # This is the main entry point to the application
   def main(argv) do
@@ -34,6 +35,9 @@ defmodule IntGen.CLI do
   defp process({:ok, options}) do
     integer_range = options.lower_bound..options.upper_bound
 
+    # Calculate the progress update frequency
+    update_frequency = progress_update_frequency(options.count, @progress_updates)
+
     # Create the random integer stream
     random_stream = IntGen.random_integer_stream(integer_range)
 
@@ -44,7 +48,7 @@ defmodule IntGen.CLI do
       |> Stream.with_index()
       # Update the progress bar
       |> Stream.each(fn {_, current_index} ->
-        update_progress_bar(current_index + 1, options.count)
+        update_progress_bar(current_index + 1, options.count, update_frequency)
       end)
       # Transform the integer-index tuple back to an integer
       |> Stream.map(fn {integer, _} -> integer end)
@@ -62,25 +66,32 @@ defmodule IntGen.CLI do
     """)
   end
 
+  # Calculates the progress update frequency (the number of items that pass between
+  # updates) based on the total number of integers and the number of updates that
+  # are to be made to the progress bar
+  defp progress_update_frequency(total_integers, num_updates) do
+    floor(total_integers / num_updates)
+  end
+
   # Updates the progress bar
   # This clause updates the progress bar occasionally when a larger number of integers
   # is generated so that the program doesn't spend all its time on progress bar updates
-  defp update_progress_bar(current_integer, total_integers)
-       when rem(current_integer, @progress_update_frequency) == 0 do
+  defp update_progress_bar(current_integer, total_integers, update_frequency)
+       when rem(current_integer, update_frequency) == 0 do
     ProgressBar.render(current_integer, total_integers, progress_bar_format())
   end
 
   # Updates the progress bar when all the integers have finished generating.
   # Otherwise, it won't show at 100% unless the total happens to be evenly
   # divisible by the update frequency
-  defp update_progress_bar(current_integer, total_integers)
+  defp update_progress_bar(current_integer, total_integers, _)
        when current_integer == total_integers do
     ProgressBar.render(current_integer, total_integers, progress_bar_format())
   end
 
   # If the current integer does not match the update frequency, don't update
   # the progress bar
-  defp update_progress_bar(_, _), do: :ok
+  defp update_progress_bar(_, _, _), do: :ok
 
   # Returns the format of the progress bar
   defp progress_bar_format() do
