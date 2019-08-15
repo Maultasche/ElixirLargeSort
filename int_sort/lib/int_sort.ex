@@ -22,7 +22,7 @@ defmodule IntSort do
 
   A stream that emits chunk file names
   """
-  @spec create_chunk_files(String.t(), String.t(), pos_integer(), non_neg_integer())
+  @spec create_chunk_files(String.t(), String.t(), pos_integer(), non_neg_integer()) :: Enum.t()
   def create_chunk_files(input_file, output_dir, chunk_size, gen) do
     # Create a stream pipeline that reads in integers from the input stream,
     # chunks them, sorts them, and then writes the chunks to files

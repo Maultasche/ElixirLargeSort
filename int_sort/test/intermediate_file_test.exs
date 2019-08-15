@@ -66,6 +66,8 @@ defmodule IntSort.IntermediateFileTest do
       # Ensure that the expected file path matches the actual file path
       assert file_path == expected_file_path
 
+      verify!()
+
       :ok
     end
   end

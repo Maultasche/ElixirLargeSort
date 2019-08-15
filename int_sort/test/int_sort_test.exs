@@ -165,4 +165,53 @@ defmodule IntSort.Test do
       File.rm_rf!(@output_dir)
     end
   end
+
+  describe "integer_count -" do
+    @test_input_file "integers.txt"
+    @test_integer_count 121
+
+    test "Testing the integer count" do
+      integer_count_test()
+    end
+
+    @spec integer_count_test() :: :ok
+    defp integer_count_test() do
+      # Do the mocks
+      create_integer_count_mocks(@test_input_file, @test_integer_count)
+
+      # Call the integer_count function
+      count = IntSort.integer_count(@test_input_file)
+
+      # Verify the count is what is expected
+      assert count == @test_integer_count
+
+      # Verify the mock expectations
+      verify!()
+    end
+
+    # Mocks any modules that need to be mocked
+    @spec create_integer_count_mocks(String.t(), non_neg_integer()) :: :ok
+    defp create_integer_count_mocks(input_file, integer_count) do
+
+      IntSort.IntegerFileMock
+      # The mock method will verify the parameter and pass an enumerable containing
+      # an atom back as the file stream
+      |> expect(
+        :integer_file_stream,
+        fn file ->
+          assert file == input_file
+          [:file_stream]
+        end
+      )
+      # The mock method will verify that the parameter is the mock file stream
+      # and return the specified integer count
+      |> expect(
+        :integer_count,
+        fn stream ->
+          assert stream == [:file_stream]
+          integer_count
+        end
+      )
+    end
+  end
 end
