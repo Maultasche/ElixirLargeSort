@@ -93,6 +93,7 @@ defmodule LargeSort.Shared.IntegerFile do
 
   The number of lines found in the stream
   """
+  @impl IntegerFileBehavior
   @spec integer_count(Enumerable.t()) :: non_neg_integer()
   def integer_count(integer_stream) do
     Enum.count(integer_stream)
