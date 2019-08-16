@@ -61,7 +61,7 @@ In addition to the suite of unit tests, I intend to run the finished product thr
 
 ## Current Status
 
-I've not yet begun coding on this project, but that should be starting soon.
+The integer generation tool is complete and the integer sorting tool is currently creating the initial set of sorted chunk files.
 
 ## Running the Integer Generator and Sorting Tools
 
@@ -69,7 +69,15 @@ This section will be filled in later.
  
 ## Running Tests
 
-This section will be filled in later.
+On a Windows command line
+```
+runTests.cmd
+```
+
+In a bash shell:
+```
+./runTests.sh
+```
 
 ## Understanding the Code
 
