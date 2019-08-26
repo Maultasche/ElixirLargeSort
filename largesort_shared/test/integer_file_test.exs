@@ -116,25 +116,12 @@ defmodule LargeSortShared.Test.IntegerFile do
       end)
     end
 
-    #Creates a stream that emits random test integers up to
-    #the specified number of integers
-    defp test_integer_stream(count) do
-      random_integer_stream(-1000..1000)
-      |> Stream.take(count)
-    end
-
     #Creates a stream that emits integer file lines test data
     @spec integer_line_stream(Enumerable.t()) :: Enumerable.t()
     defp integer_line_stream(integer_stream) do
       integer_stream
       |> Stream.map(&Integer.to_string/1)
       |> Stream.map(&(&1 <> "\n"))
-    end
-
-    # Creates a random integer stream
-    @spec random_integer_stream(Range.t()) :: Enumerable.t()
-    defp random_integer_stream(integer_range) do
-      Stream.repeatedly(fn -> Enum.random(integer_range) end)
     end
   end
 
@@ -189,9 +176,112 @@ defmodule LargeSortShared.Test.IntegerFile do
       assert actual_count == expected_count
     end
   end
+
+  describe "read_device - " do
+    @non_existent_file "non_existent_file.txt"
+
+    test "Creating a read device from an existing file" do
+      test_data = create_test_file(@test_integer_file_name, 10)
+
+      file = IntegerFile.read_device(@test_integer_file_name)
+
+      expected_line = Integer.to_string(hd(test_data)) <> "\n"
+      first_line = IO.read(file, :line)
+
+      assert(first_line == expected_line)
+
+      File.close(file)
+
+      delete_test_file(@test_integer_file_name)
+    end
+
+    test "Creating a read device from a non-existent file" do
+      assert_raise File.Error, fn ->
+        IntegerFile.read_device(@non_existent_file)
+      end
+    end
+  end
+
+  describe "write_device - " do
+    @non_existent_file "non_existent_file.txt"
+
+    test "Creating a write device for an existing file" do
+      # Create a file with test data
+      create_test_file(@test_integer_file_name, 10)
+
+      # Run the test with the file
+      do_write_test(@test_integer_file_name)
+    end
+
+    test "Creating a write device for a non-existent file" do
+      do_write_test(@non_existent_file)
+    end
+
+    defp do_write_test(file_name) do
+      # Create a write device for the file
+      file = IntegerFile.write_device(file_name)
+
+      # Write a line to the file
+      data_line = "34\n"
+
+      IO.write(file, data_line)
+
+      File.close(file)
+
+      # Read the line from the file and verify that it is the same
+      # one that was written
+      file = IntegerFile.read_device(file_name)
+
+      first_line = IO.read(file, :line)
+      assert(first_line == data_line)
+
+      # Read the next line of the file and verify that it is the end of the file
+      next_line = IO.read(file, :line)
+      assert(next_line == :eof)
+
+      File.close(file)
+
+      # Clean up by deleting the file
+      delete_test_file(file_name)
+    end
+  end
+
+  # Creates a test integer file filled with random integer data
+  defp create_test_file(file_name, count) do
+    # Create the test data
+    test_data = test_integer_stream(count) |> Enum.to_list()
+
+    # Create the test file
+    file_stream = IntegerFile.integer_file_stream(file_name)
+
+    # Stream the data to the file
+    file_stream
+    |> write_data_to_stream(test_data)
+    |> Stream.run()
+
+    test_data
+  end
+
   #Deletes the test file
   defp delete_test_file() do
-    File.rm!(@test_integer_file_name)
+    delete_test_file(@test_integer_file_name)
+  end
+
+  defp delete_test_file(file_name) do
+    File.rm!(file_name)
+  end
+
+  # Creates a random integer stream
+  @spec random_integer_stream(Range.t()) :: Enumerable.t()
+  defp random_integer_stream(integer_range) do
+    Stream.repeatedly(fn -> Enum.random(integer_range) end)
+  end
+
+  #Creates a stream that emits random test integers up to
+  #the specified number of integers
+  defp test_integer_stream(count) do
+    random_integer_stream(-1000..1000)
+    |> Stream.take(count)
   end
 
   #Writes an enumerable containing integers to a stream

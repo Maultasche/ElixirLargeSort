@@ -113,4 +113,41 @@ defmodule LargeSort.Shared.IntegerFile do
     File.mkdir_p(directory)
   end
 
+  @doc """
+  Creates an integer file device for reading
+
+  This function assumes that the integer file exists and can be opened for reading
+
+  ## Parameters
+
+  - path: The path of the file to be opened for reading
+
+  ## Returns
+
+  An IO device that can be used to read from the integer file
+  """
+  @impl IntegerFileBehavior
+  @spec read_device(String.t()) :: File.io_device()
+  def read_device(path) do
+    File.open!(path, [:utf8, :read, :read_ahead])
+  end
+
+  @doc """
+  Creates an integer file device for writing
+
+  This function assumes that the integer file exists and can be opened for writing
+
+  ## Parameters
+
+  - path: The path of the file to be opened for writing
+
+  ## Returns
+
+  An IO device that can be used to write to the integer file
+  """
+  @impl IntegerFileBehavior
+  @spec write_device(String.t()) :: File.io_device()
+  def write_device(path) do
+    File.open!(path, [:utf8, :write, :delayed_write])
+  end
 end
