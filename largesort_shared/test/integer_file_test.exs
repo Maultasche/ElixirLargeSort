@@ -183,7 +183,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     test "Creating a read device from an existing file" do
       test_data = create_test_file(@test_integer_file_name, 10)
 
-      file = IntegerFile.read_device(@test_integer_file_name)
+      file = IntegerFile.read_device!(@test_integer_file_name)
 
       expected_line = Integer.to_string(hd(test_data)) <> "\n"
       first_line = IO.read(file, :line)
@@ -197,7 +197,7 @@ defmodule LargeSortShared.Test.IntegerFile do
 
     test "Creating a read device from a non-existent file" do
       assert_raise File.Error, fn ->
-        IntegerFile.read_device(@non_existent_file)
+        IntegerFile.read_device!(@non_existent_file)
       end
     end
   end
@@ -219,7 +219,7 @@ defmodule LargeSortShared.Test.IntegerFile do
 
     defp do_write_test(file_name) do
       # Create a write device for the file
-      file = IntegerFile.write_device(file_name)
+      file = IntegerFile.write_device!(file_name)
 
       # Write a line to the file
       data_line = "34\n"
@@ -230,7 +230,7 @@ defmodule LargeSortShared.Test.IntegerFile do
 
       # Read the line from the file and verify that it is the same
       # one that was written
-      file = IntegerFile.read_device(file_name)
+      file = IntegerFile.read_device!(file_name)
 
       first_line = IO.read(file, :line)
       assert(first_line == data_line)
@@ -243,6 +243,100 @@ defmodule LargeSortShared.Test.IntegerFile do
 
       # Clean up by deleting the file
       delete_test_file(file_name)
+    end
+  end
+
+  describe "read_integer() -" do
+    test "Reading integers from a device with multiple integers" do
+      read_integer_test(101)
+    end
+
+    test "Reading integers from a device a single integer" do
+      read_integer_test(1)
+    end
+
+    test "Reading integers from a device no integers" do
+      read_integer_test(0)
+    end
+
+    # Runs the read_integer() test
+    defp read_integer_test(count) do
+      # Create a test file containing random data and return the data
+      test_data = create_test_file(@test_integer_file_name, count)
+
+      # Open the file as an IO device for reading
+      file = IntegerFile.read_device!(@test_integer_file_name)
+
+      # Read the contents of the file
+      actual_data = read_integers(file)
+
+      # Compare the actual data to the expected data
+      test_data
+      |> Enum.zip(actual_data)
+      |> Enum.each(&compare_integers/1)
+
+      # Close the file and delete it
+      File.close(file)
+
+      delete_test_file(@test_integer_file_name)
+    end
+
+    # Reads the integers from a device and returns them as a list
+    defp read_integers(device) do
+      device
+      |> read_integers([], IntegerFile.read_integer(device))
+      |> Enum.reverse()
+    end
+
+    # Recursively reads integers for as long as integers can be read and
+    # returns a list of the integers that were read in reverse order
+    defp read_integers(device, data_list, read_data) when is_integer(read_data) do
+      read_integers(device, [read_data | data_list], IntegerFile.read_integer(device))
+    end
+    defp read_integers(_, data_list, _), do: data_list
+  end
+
+  describe "write_integer() -" do
+    test "Writing integers to a device with multiple integers" do
+      write_integer_test(101)
+    end
+
+    test "Writing integers to a device a single integer" do
+      write_integer_test(1)
+    end
+
+    test "Writing integers to a device no integers" do
+      write_integer_test(0)
+    end
+
+    # Runs the wrote_integer() test
+    defp write_integer_test(count) do
+      # Create a set of integers to use for testing
+      test_data = test_integer_stream(count) |> Enum.to_list()
+
+      # Create a StringIO device
+      {:ok, device} = StringIO.open("")
+
+      # Write the test integers to the device
+      Enum.each(test_data, fn integer -> IntegerFile.write_integer(device, integer) end)
+
+      # Close the StringIO device and extract the written contents
+      {:ok, {_, written_data}} = StringIO.close(device)
+
+      # Compare the actual data to the expected data
+      verify_written_data(written_data, test_data)
+    end
+
+    # Verifies that the integers were written in the correct format
+    @spec verify_written_data(String.t(), Enum.t()) :: :ok
+    defp verify_written_data(written_data, expected_integers) do
+      written_data
+      |> String.trim()
+      |> String.split("\n")
+      |> Enum.filter(fn data -> data != "" end)
+      |> verify_integer_stream(expected_integers)
+
+      :ok
     end
   end
 

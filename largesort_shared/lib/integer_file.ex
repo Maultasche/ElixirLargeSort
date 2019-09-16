@@ -127,8 +127,8 @@ defmodule LargeSort.Shared.IntegerFile do
   An IO device that can be used to read from the integer file
   """
   @impl IntegerFileBehavior
-  @spec read_device(String.t()) :: File.io_device()
-  def read_device(path) do
+  @spec read_device!(String.t()) :: IO.device()
+  def read_device!(path) do
     File.open!(path, [:utf8, :read, :read_ahead])
   end
 
@@ -146,8 +146,67 @@ defmodule LargeSort.Shared.IntegerFile do
   An IO device that can be used to write to the integer file
   """
   @impl IntegerFileBehavior
-  @spec write_device(String.t()) :: File.io_device()
-  def write_device(path) do
+  @spec write_device!(String.t()) :: IO.device()
+  def write_device!(path) do
     File.open!(path, [:utf8, :write, :delayed_write])
+  end
+
+  @doc """
+  Reads an integer from a device that contains integer file-formatted data
+
+  This function assumes that the IO device is operating in a read mode as well
+  as :utf8 mode.
+
+  ## Parameters
+
+  - device: The IO device to be read from
+
+  ## Returns
+
+  The integer that was read from the device, an `:eof` when the end of file
+  was encountered, or `{:error, reason}` when there was an error reading
+  from the device.
+  """
+  @impl IntegerFileBehavior
+  @spec read_integer(IO.device()) :: integer() | IO.no_data()
+  def read_integer(device) do
+    device
+    |> IO.read(:line)
+    |> data_to_integer()
+  end
+
+  @doc """
+  Writes an integer to a device using the integer file format
+
+  This function assumes that the IO device is operating in a write mode as well
+  as :utf8 mode.
+
+  ## Parameters
+
+  - device: The IO device to be written to
+
+  ## Returns
+
+  :ok to indicate success
+  """
+  @impl IntegerFileBehavior
+  @spec write_integer(IO.device(), integer()) :: :ok
+  def write_integer(device, integer) do
+    integer
+    # Convert the integer to a string
+    |> Integer.to_string()
+    # Concatenate the integer string with a newline character
+    |> Kernel.<>("\n")
+    # Write the resulting line to the device
+    |> (fn line -> IO.write(device, line) end).()
+  end
+
+  # Converts data read from an IO device to an integer
+  defp data_to_integer(:eof), do: :eof
+  defp data_to_integer(data = {:error, _}), do: data
+  defp data_to_integer(data) do
+    data
+    |> String.trim()
+    |> String.to_integer()
   end
 end
