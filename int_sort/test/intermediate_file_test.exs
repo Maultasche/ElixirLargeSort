@@ -71,4 +71,88 @@ defmodule IntSort.IntermediateFileTest do
       :ok
     end
   end
+
+  describe "create_file_groups -" do
+    test "Create file groups with the number of files evenly divisible by the file group size" do
+      test_create_file_groups(100, 10)
+    end
+
+    test "Create file groups with the number of files not evenly divisible by the file group size" do
+      test_create_file_groups(100, 12)
+    end
+
+    test "Create file groups with the group size the same as the number of files" do
+      test_create_file_groups(10, 10)
+    end
+
+    test "Create file groups with the group size larger than the number of files" do
+      test_create_file_groups(10, 12)
+    end
+
+    test "Create file groups with a group size of 1" do
+      test_create_file_groups(10, 1)
+    end
+
+    test "Create file groups with a single file" do
+      test_create_file_groups(1, 10)
+    end
+
+    test "Create file groups with no files" do
+      test_create_file_groups(0, 10)
+    end
+
+    # Tests file group creation
+    @spec test_create_file_groups(non_neg_integer(), non_neg_integer()) :: :ok
+    defp test_create_file_groups(file_count, group_size) do
+      # Create the test files
+      test_files = 1..file_count
+      |> Enum.map(&test_file_name/1)
+
+      # Calculate the expected file groups
+      expected_file_groups = test_files
+      |> Enum.chunk_every(group_size)
+      |> Enum.with_index(1)
+
+      # Create the file groups
+      actual_file_groups = IntermediateFile.create_file_groups(test_files, group_size)
+      |> Enum.to_list()
+
+      compare_file_groups(expected_file_groups, actual_file_groups)
+
+      :ok
+    end
+
+    # Compares the expected file groups to the actual file groups
+    @spec compare_file_groups(Enum.t(), Enum.t()) :: :ok
+    defp compare_file_groups(expected_groups, actual_groups) do
+      # Assert the number of groups
+      assert Enum.count(expected_groups) == Enum.count(actual_groups)
+
+      # Compare each group
+      expected_groups
+      |> Enum.zip(actual_groups)
+      |> Enum.each(&compare_file_group/1)
+    end
+
+    # Compares a file group pair
+    @spec compare_file_group({Enum.t(), Enum.t()}) :: :ok
+    defp compare_file_group({{expected_group, expected_index}, {actual_group, actual_index}}) do
+      # Compare the number of files in each group
+      assert Enum.count(expected_group) == Enum.count(actual_group)
+
+      # Compare the index
+      assert expected_index == actual_index
+
+      # Compare the file names in each group
+      expected_group
+      |> Enum.zip(actual_group)
+      |> Enum.each(fn {expected_file, actual_file} ->
+        assert expected_file == actual_file
+      end)
+    end
+
+    # Creates a test file name based on an integer representing a file number
+    @spec test_file_name(non_neg_integer()) :: String.t()
+    defp test_file_name(file_num), do: "testfile#{file_num}.txt"
+  end
 end
