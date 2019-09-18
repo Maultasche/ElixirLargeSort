@@ -43,5 +43,4 @@ defmodule LargeSort.Shared.TestStream do
     |> Stream.reject(fn line -> line == "" end)
     |> Enum.map(&String.to_integer/1)
   end
-
 end

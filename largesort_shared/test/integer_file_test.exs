@@ -6,14 +6,14 @@ defmodule LargeSortShared.Test.IntegerFile do
 
   @test_integer_file_name "test_integer_file.txt"
 
-  #Tests integer_file_stream
+  # Tests integer_file_stream
   describe "integer_file_stream -" do
     setup do
       on_exit(&delete_test_file/0)
     end
 
     test "Create integer file stream and write to it" do
-      #Create the file stream and write some test data to the file stream
+      # Create the file stream and write some test data to the file stream
       test_data = 1..10
       file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
@@ -21,13 +21,13 @@ defmodule LargeSortShared.Test.IntegerFile do
       |> write_data_to_stream(test_data)
       |> Stream.run()
 
-      #Verify that the stream was created correctly by verifying the data that was
-      #written to the file stream
+      # Verify that the stream was created correctly by verifying the data that was
+      # written to the file stream
       verify_integer_file(@test_integer_file_name, test_data)
     end
 
     test "Create integer file stream and read from it" do
-      #Create the file stream and write some test data to the file stream
+      # Create the file stream and write some test data to the file stream
       test_data = 1..10
       file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
@@ -35,10 +35,10 @@ defmodule LargeSortShared.Test.IntegerFile do
       |> write_data_to_stream(test_data)
       |> Stream.run()
 
-      #Create a new file stream, which we will use to read from the file
+      # Create a new file stream, which we will use to read from the file
       file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
-      #Verify that the stream can read from the file correctly
+      # Verify that the stream can read from the file correctly
       verify_integer_stream(file_stream, test_data)
     end
   end
@@ -65,15 +65,15 @@ defmodule LargeSortShared.Test.IntegerFile do
     end
 
     defp test_write_integers_to_stream(test_data) do
-      #Create the file stream
+      # Create the file stream
       file_stream = IntegerFile.integer_file_stream(@test_integer_file_name)
 
-      #Write the test data to the file stream
+      # Write the test data to the file stream
       test_data
       |> IntegerFile.write_integers_to_stream(file_stream)
       |> Stream.run()
 
-      #Verify that the data that was written to the file stream correctly
+      # Verify that the data that was written to the file stream correctly
       verify_integer_file(@test_integer_file_name, test_data)
     end
   end
@@ -99,7 +99,7 @@ defmodule LargeSortShared.Test.IntegerFile do
       test_read_stream(1)
     end
 
-    #Tests read_stream with a particular number of integers
+    # Tests read_stream with a particular number of integers
     defp test_read_stream(count) do
       # Create the test integer data stream
       test_data = test_integer_stream(count) |> Enum.to_list()
@@ -116,7 +116,7 @@ defmodule LargeSortShared.Test.IntegerFile do
       end)
     end
 
-    #Creates a stream that emits integer file lines test data
+    # Creates a stream that emits integer file lines test data
     @spec integer_line_stream(Enumerable.t()) :: Enumerable.t()
     defp integer_line_stream(integer_stream) do
       integer_stream
@@ -158,7 +158,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     end
 
     test "Testing with an single line of integers" do
-      data = [ "58\n" ]
+      data = ["58\n"]
 
       test_integer_count(data, length(data))
     end
@@ -293,6 +293,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     defp read_integers(device, data_list, read_data) when is_integer(read_data) do
       read_integers(device, [read_data | data_list], IntegerFile.read_integer(device))
     end
+
     defp read_integers(_, data_list, _), do: data_list
   end
 
@@ -359,7 +360,7 @@ defmodule LargeSortShared.Test.IntegerFile do
         |> Stream.take(1000)
         |> Enum.to_list()
 
-        test_integers_to_lines(test_data)
+      test_integers_to_lines(test_data)
     end
 
     test "Convert a single integer to lines" do
@@ -413,7 +414,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     test_data
   end
 
-  #Deletes the test file
+  # Deletes the test file
   defp delete_test_file() do
     delete_test_file(@test_integer_file_name)
   end
@@ -428,14 +429,14 @@ defmodule LargeSortShared.Test.IntegerFile do
     Stream.repeatedly(fn -> Enum.random(integer_range) end)
   end
 
-  #Creates a stream that emits random test integers up to
-  #the specified number of integers
+  # Creates a stream that emits random test integers up to
+  # the specified number of integers
   defp test_integer_stream(count) do
     random_integer_stream(-1000..1000)
     |> Stream.take(count)
   end
 
-  #Writes an enumerable containing integers to a stream
+  # Writes an enumerable containing integers to a stream
   defp write_data_to_stream(stream, data) do
     data
     |> Stream.map(&Integer.to_string/1)
@@ -443,13 +444,13 @@ defmodule LargeSortShared.Test.IntegerFile do
     |> Stream.into(stream)
   end
 
-  #Verifies that an integer file contains the expected contents
+  # Verifies that an integer file contains the expected contents
   defp verify_integer_file(path, expected_integers) do
     File.stream!(path, [:utf8], :line)
     |> verify_integer_stream(expected_integers)
   end
 
-  #Verifies that a stream contains the expected contents
+  # Verifies that a stream contains the expected contents
   defp verify_integer_stream(stream, expected_integers) do
     stream
     |> Stream.map(&String.trim/1)
@@ -459,7 +460,7 @@ defmodule LargeSortShared.Test.IntegerFile do
     |> Stream.run()
   end
 
-  #Compares the integers in a tuple to each other
+  # Compares the integers in a tuple to each other
   defp compare_integers({integer1, integer2}) do
     assert integer1 == integer2
   end

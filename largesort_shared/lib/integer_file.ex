@@ -98,14 +98,17 @@ defmodule LargeSort.Shared.IntegerFile do
     Enum.count(integer_stream)
   end
 
-  #Creates the directory for a file path, if it doesn't already exist
+  # Creates the directory for a file path, if it doesn't already exist
   defp create_file_directory(file_path, directory_exists \\ nil)
+
   defp create_file_directory(file_path, nil) do
     directory = Path.dirname(file_path)
 
     create_file_directory(file_path, File.dir?(directory))
   end
+
   defp create_file_directory(_, true), do: :ok
+
   defp create_file_directory(file_path, false) do
     directory = Path.dirname(file_path)
 
@@ -225,6 +228,7 @@ defmodule LargeSort.Shared.IntegerFile do
   # Converts data read from an IO device to an integer
   defp data_to_integer(:eof), do: :eof
   defp data_to_integer(data = {:error, _}), do: data
+
   defp data_to_integer(data) do
     data
     |> String.trim()
