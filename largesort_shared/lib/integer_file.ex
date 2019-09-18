@@ -47,8 +47,7 @@ defmodule LargeSort.Shared.IntegerFile do
   @spec write_integers_to_stream(Enumerable.t(), Collectable.t()) :: Enumerable.t()
   def write_integers_to_stream(enumerable, out_stream) do
     enumerable
-    |> Stream.map(&Integer.to_string/1)
-    |> Stream.map(&(&1 <> "\n"))
+    |> integers_to_lines()
     |> Stream.into(out_stream)
   end
 
@@ -199,6 +198,28 @@ defmodule LargeSort.Shared.IntegerFile do
     |> Kernel.<>("\n")
     # Write the resulting line to the device
     |> (fn line -> IO.write(device, line) end).()
+  end
+
+  @doc """
+  Converts an enumerable containing integers
+  to a stream of integer file lines (including the newline
+  characters)
+
+  ## Parameters
+
+  - integers: an enumerable containing integers to be converted
+
+  ## Returns
+
+  A collection of strings that contain the integers in integer file format,
+  with each element an integer file line
+  """
+  @impl IntegerFileBehavior
+  @spec integers_to_lines(Enum.t()) :: Enum.t()
+  def integers_to_lines(integers) do
+    integers
+    |> Stream.map(&Integer.to_string/1)
+    |> Stream.map(&(&1 <> "\n"))
   end
 
   # Converts data read from an IO device to an integer

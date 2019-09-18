@@ -340,6 +340,63 @@ defmodule LargeSortShared.Test.IntegerFile do
     end
   end
 
+  describe "integers_to_lines() -" do
+    test "Converting positive integers to lines" do
+      test_integers_to_lines([3, 8, 1, 45336, 333, 84])
+    end
+
+    test "Convert negative integers to lines" do
+      test_integers_to_lines([-1, -4532, -873, -67, -19, -12])
+    end
+
+    test "Convert positive and negative integers to lines" do
+      test_integers_to_lines([-10, 54, 0, 5, -8, 1, 0, 116])
+    end
+
+    test "Convert random integers to lines" do
+      test_data =
+        random_integer_stream(-1000..1000)
+        |> Stream.take(1000)
+        |> Enum.to_list()
+
+        test_integers_to_lines(test_data)
+    end
+
+    test "Convert a single integer to lines" do
+      test_integers_to_lines([23])
+    end
+
+    test "Convert an empty enumerable to lines" do
+      test_integers_to_lines([])
+    end
+
+    # Runs a test of the integers_to_lines() function
+    @spec test_integers_to_lines(list(integer())) :: :ok
+    defp test_integers_to_lines(test_data) do
+      # Calculate the expected lines
+      expected_result = expected_lines(test_data)
+
+      # Convert the integers to lines
+      actual_result = IntegerFile.integers_to_lines(test_data)
+
+      # Verify the result
+      expected_result
+      |> Enum.zip(actual_result)
+      |> Enum.each(fn {expected, actual} -> assert expected == actual end)
+
+      :ok
+    end
+
+    # Creates a collection of expected integer file lines from a
+    # collection of integers
+    @spec expected_lines(Enum.t()) :: Enum.t()
+    defp expected_lines(test_data) do
+      test_data
+      |> Enum.map(fn integer -> Integer.to_string(integer) end)
+      |> Enum.map(&(&1 <> "\n"))
+    end
+  end
+
   # Creates a test integer file filled with random integer data
   defp create_test_file(file_name, count) do
     # Create the test data

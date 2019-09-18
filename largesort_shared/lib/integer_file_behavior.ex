@@ -7,4 +7,5 @@ defmodule LargeSort.Shared.IntegerFileBehavior do
   @callback write_device!(String.t()) :: IO.device()
   @callback read_integer(IO.device()) :: integer() | IO.no_data()
   @callback write_integer(IO.device(), integer()) :: :ok
+  @callback integers_to_lines(Enum.t()) :: Enum.t()
 end
