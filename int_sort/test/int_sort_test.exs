@@ -192,7 +192,6 @@ defmodule IntSort.Test do
     # Mocks any modules that need to be mocked
     @spec create_integer_count_mocks(String.t(), non_neg_integer()) :: :ok
     defp create_integer_count_mocks(input_file, integer_count) do
-
       IntSort.IntegerFileMock
       # The mock method will verify the parameter and pass an enumerable containing
       # an atom back as the file stream

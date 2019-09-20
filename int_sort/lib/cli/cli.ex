@@ -16,7 +16,7 @@ defmodule IntSort.CLI do
   @chunk_gen 1
 
   # The maximum number of intermediate files to be merged at once
-  #@merge_files 10
+  # @merge_files 10
 
   # This is the main entry point to the application
   def main(argv) do
@@ -65,18 +65,24 @@ defmodule IntSort.CLI do
 
   @spec create_chunks(Options.t(), non_neg_integer()) :: Enum.t()
   defp create_chunks(options, num_chunks) do
-    IO.puts "Creating Chunk Files"
+    IO.puts("Creating Chunk Files")
 
     # Calculate the progress update frequency for chunk creation
     update_frequency = progress_update_frequency(num_chunks, @progress_updates)
 
     # Create the chunk files
-    IntSort.create_chunk_files(options.input_file, Path.dirname(options.output_file),
-      options.chunk_size, @chunk_gen)
+    IntSort.create_chunk_files(
+      options.input_file,
+      Path.dirname(options.output_file),
+      options.chunk_size,
+      @chunk_gen
+    )
     # Number each chunk
     |> Stream.with_index(1)
     # Update the progress bar after each chunk has been processed
-    |> Stream.each(fn {_, chunk_num} -> update_progress_bar(chunk_num, num_chunks, update_frequency) end)
+    |> Stream.each(fn {_, chunk_num} ->
+      update_progress_bar(chunk_num, num_chunks, update_frequency)
+    end)
     # Transform the stream back into chunk file names
     |> Stream.map(fn {chunk_file, _} -> chunk_file end)
   end
@@ -89,12 +95,12 @@ defmodule IntSort.CLI do
   end
 
   defp display_integer_counting_message() do
-    IO.puts "Determining the number of integers and chunks in the input file..."
+    IO.puts("Determining the number of integers and chunks in the input file...")
   end
 
   defp display_integer_counting_result(data = {integers, chunks}) do
-    IO.puts "Number of Integers: #{integers}"
-    IO.puts "Number of Chunks: #{chunks}"
+    IO.puts("Number of Integers: #{integers}")
+    IO.puts("Number of Chunks: #{chunks}")
 
     data
   end
