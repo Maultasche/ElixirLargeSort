@@ -215,7 +215,6 @@ defmodule IntSort.IntermediateFileTest do
       test_merge_stream(test_data)
     end
 
-    @tag :merge_test
     test "Merging no devices" do
       test_data = []
 

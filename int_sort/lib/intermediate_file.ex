@@ -93,7 +93,7 @@ defmodule IntSort.IntermediateFile do
   end
 
   @doc """
-  Creates a merge stream that outputs the next smallest integer from all
+  Creates a merge stream that emits the next smallest integer from all
   the intermediate files that are being merged
 
   This is where the merge magic happens. Integers are read from the (sorted)
@@ -104,7 +104,7 @@ defmodule IntSort.IntermediateFile do
 
   The devices passed into this function must have been previously opened
   using `IntegerFile.read_device!/1`. I did it this way so rather
-  than using filr names so that someone could make a merge stream using
+  than using file names so that someone could make a merge stream using
   any kind of device, not just files. It certainly makes this function
   more easily testable.
 
@@ -143,11 +143,12 @@ defmodule IntSort.IntermediateFile do
   # Creates the initial state of the merge stream, which will be used as the
   # accumulator when retrieving future stream elements
   @spec initial_merge_stream_state(Enum.t()) :: merge_stream_acc()
-  defp initial_merge_stream_state(file_devices) do
+  defp initial_merge_stream_state(devices) do
     # Create a collection of tuples where the first element is the
     # first integer read from the device and the second element is the
     # device
-    Enum.map(file_devices, fn device -> {read_next_integer(device), device} end)
+    devices
+    |> Enum.map(fn device -> {read_next_integer(device), device} end)
     |> Enum.to_list()
   end
 
