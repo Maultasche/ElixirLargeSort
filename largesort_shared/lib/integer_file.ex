@@ -154,6 +154,23 @@ defmodule LargeSort.Shared.IntegerFile do
   end
 
   @doc """
+  Closes an integer file device
+
+  ## Parameters
+
+  - device: The integer file device to be closed
+
+  ## Returns
+
+  `:ok`
+  """
+  @impl IntegerFileBehavior
+  @spec close_device(IO.device()) :: :ok
+  def close_device(device) do
+    File.close(device)
+  end
+
+  @doc """
   Reads an integer from a device that contains integer file-formatted data
 
   This function assumes that the IO device is operating in a read mode as well

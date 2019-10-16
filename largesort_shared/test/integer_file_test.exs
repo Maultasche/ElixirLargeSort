@@ -246,6 +246,48 @@ defmodule LargeSortShared.Test.IntegerFile do
     end
   end
 
+  describe "close_device - " do
+    test "Closing a integer file device open for reading" do
+      create_test_file(@test_integer_file_name, 1000)
+
+      device = IntegerFile.read_device!(@test_integer_file_name)
+
+      IntegerFile.close_device(device)
+
+      assert Process.alive?(device) == false
+
+      delete_test_file(@test_integer_file_name)
+    end
+
+    test "Closing a integer file device open for writing" do
+      create_test_file(@test_integer_file_name, 1000)
+
+      device = IntegerFile.write_device!(@test_integer_file_name)
+
+      IntegerFile.close_device(device)
+
+      assert Process.alive?(device) == false
+
+      delete_test_file(@test_integer_file_name)
+    end
+
+    test "Closing an already-closed integer file device" do
+      create_test_file(@test_integer_file_name, 1000)
+
+      device = IntegerFile.read_device!(@test_integer_file_name)
+
+      IntegerFile.close_device(device)
+
+      assert Process.alive?(device) == false
+
+      IntegerFile.close_device(device)
+
+      assert Process.alive?(device) == false
+
+      delete_test_file(@test_integer_file_name)
+    end
+  end
+
   describe "read_integer() -" do
     test "Reading integers from a device with multiple integers" do
       read_integer_test(101)
