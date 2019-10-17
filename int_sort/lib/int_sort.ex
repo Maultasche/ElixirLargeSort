@@ -37,9 +37,75 @@ defmodule IntSort do
     |> Stream.map(fn {_, chunk_num} -> gen_file_name(gen, chunk_num) end)
   end
 
+  @doc """
+  Counts the number of integers in an input file
+
+  This function assumes that the input file is a valid integer file.
+  ## Parameters
+
+  - input_file: The input file whose integers are to be counted
+
+  ## Returns
+
+  The number of integers found in the file
+  """
+  @spec integer_count(String.t()) :: non_neg_integer()
   def integer_count(input_file) do
     @integer_file.integer_file_stream(input_file)
     |> @integer_file.integer_count()
+  end
+
+  @doc """
+  Does a single round of merges on a collection of intermediate files.
+
+  This function only does a single round, merging groups of N intermediate
+  files together, where N is defined by the `merge_count` parameter. The merge
+  will result in ceil(N/merge_count) files containing the merged integers.
+  This function will likely be called multiple times until it results in
+  a single file.
+
+  ## Parameters
+
+  - files: A collection of file names of the intermediate files to be merged
+  - merge_count: The number of files to be merged at once
+  - merge_file_name: A function that takes in the merge group number and
+    returns the file name to use for the merge file
+  - integer_merged: A function that is called when an integer is merged. This
+    function takes a single parameter, which is the number of integers that have
+    been merged during this round of merges. This function can be used to display
+    or measure merge progress
+
+  ## Returns
+
+  A stream that emits the file names containing the merged integers from this
+  round
+  """
+  @spec merge_intermediate_files(Enum.t(), pos_integer(), (non_neg_integer() -> String.t()), (non_neg_integer() -> :ok)) :: Enum.t()
+  def merge_intermediate_files(files, merge_count, merge_file_name, integer_merged \\ fn _ -> :ok end) do
+    files
+    # Convert the files to file groups
+    |> IntermediateFile.create_file_groups(merge_count)
+    # Include the index with each file group
+    |> Stream.with_index(0)
+    # Merge each file group
+    |> Stream.map(fn {file_group, group_num} ->
+      # Get the file name for this group's merged file
+      group_file_name = merge_file_name.(group_num + 1)
+
+      # Create the function that is called every time an integer in the file
+      # grop is merged
+      group_integer_merged = fn count ->
+        #Transform the internal group count to an overall integer count
+        integer_merged.((group_num * merge_count) + count)
+      end
+
+      # Call the function to do the merging for this file group
+      merge_file_group(file_group, group_file_name, group_integer_merged)
+      |> Stream.run()
+
+      # Return the file name
+      group_file_name
+    end)
   end
 
   @doc """
@@ -57,5 +123,25 @@ defmodule IntSort do
   @spec gen_file_name(non_neg_integer(), non_neg_integer()) :: String.t()
   def gen_file_name(gen, num) do
     "gen#{gen}-#{num}.txt"
+  end
+
+  # Merges a group of integer files into a single integer file
+  @spec merge_file_group(Enum.t(), String.t(), (non_neg_integer() -> :ok)) :: Enum.t()
+  defp merge_file_group(file_group, merged_file, integer_merged) do
+    # Open each file in the group as a file device
+    file_devices = Enum.map(file_group, fn file ->
+      @integer_file.read_device!(file)
+    end)
+
+    # Create a merge stream to merge the file devices
+    merge_stream = IntermediateFile.merge_stream(file_devices, &@integer_file.close_device/1)
+
+    # Open a stream for the output file
+    output_stream = @integer_file.integer_file_stream(merged_file)
+
+    # Pipe the merged integers from the merge stream to the output file
+    Stream.into(merge_stream, output_stream)
+    |> Stream.with_index(1)
+    |> Stream.each(fn {_, count} -> integer_merged.(count) end)
   end
 end
