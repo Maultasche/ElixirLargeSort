@@ -79,9 +79,10 @@ defmodule IntSort.IntermediateFile do
 
   ## Returns
 
-  A stream of file element chunks in a group, where each group has group_size
-  elements in the group. The last group may be smaller than group_size if the
-  number of file elements is not evenly divisible by group_size.
+  A stream of tuples containing the file element chunks in a group, where each group
+  has group_size elements in the group, as the first tuple element and the group number
+  (starting with 1) as the second tuple element. The last group may be smaller than
+  group_size if the number of file elements is not evenly divisible by group_size.
   """
   @spec create_file_groups(Enum.t(), pos_integer()) :: Enum.t()
   def create_file_groups(file_elements, group_size) do

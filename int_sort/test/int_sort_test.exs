@@ -5,7 +5,7 @@ defmodule IntSort.Test do
   doctest IntSort
 
   alias LargeSort.Shared.IntegerFile
-  alias LargeSort.Shared.TestData
+  alias IntSort.Test.Common
   alias IntSort.Test
 
   describe "gen_file_name -" do
@@ -65,7 +65,7 @@ defmodule IntSort.Test do
       chunk_gen = 1
 
       # Create an integer file for use in testing
-      test_integers = create_test_integers(num_integers)
+      test_integers = Test.Common.create_test_integers(num_integers)
       IntGen.create_integer_file(@input_file, num_integers, test_integers)
 
       # Create any mocks that need to be created
@@ -84,7 +84,7 @@ defmodule IntSort.Test do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      Test.Common.stub_integer_file_mock()
 
       :ok
     end
@@ -153,13 +153,6 @@ defmodule IntSort.Test do
       |> Enum.map(fn chunk_num -> IntSort.gen_file_name(gen, chunk_num) end)
     end
 
-    # Creates a stream of random integers for use in testing
-    @spec create_test_integers(non_neg_integer()) :: Enum.t()
-    defp create_test_integers(num_integers) do
-      TestData.random_integer_stream(-1000..1000)
-      |> Enum.take(num_integers)
-    end
-
     # Deletes the test data directory
     defp delete_test_data() do
       File.rm_rf!(@output_dir)
@@ -211,6 +204,309 @@ defmodule IntSort.Test do
           integer_count
         end
       )
+    end
+  end
+
+  describe "merge_intermediate_files" do
+    @test_file_dir "test_files"
+
+    test "Merging multiple intermediate files of the same size" do
+      test_data = [
+        [-3, -1, 0, 5, 12, 15, 22, 23, 23, 25],
+        [-10, -8, -3, -1, 0, 1, 2, 6, 7, 11],
+        [-21, -19, -12, 4, 9, 13, 14, 19, 21, 23]
+      ]
+
+      test_file_merging(test_data, 10)
+    end
+
+    test "Test merging only negative numbers" do
+      test_data = [
+        [-30, -22, -15, -8],
+        [-10, -8, -3, -1],
+        [-21, -19, -12, -4],
+        [-21, -11, -10, -9]
+      ]
+
+      test_file_merging(test_data, 10)
+    end
+
+    test "Test merging only positive numbers" do
+      test_data = [
+        [8, 15, 22, 30, 34],
+        [1, 3, 133, 220, 1013],
+        [4, 19, 22, 445, 87],
+        [7, 22, 35, 48, 53],
+        [2, 3, 10, 11, 12]
+      ]
+
+      test_file_merging(test_data, 10)
+    end
+
+    test "Test merging positive and negative numbers" do
+      test_data = [
+        [-22, -15, 22],
+        [1, 5, 8],
+        [-4, 0, 87],
+        [-7, -3, -1],
+        [-2, 0, 10]
+      ]
+
+      test_file_merging(test_data, 10)
+    end
+
+    test "Merging multiple intermediate files into a single file" do
+      test_data = [
+        [-22, -15, 22],
+        [1, 5, 8],
+        [-4, 0, 87],
+        [-7, -3, -1],
+        [-2, 0, 10]
+      ]
+
+      test_file_merging(test_data, Enum.count(test_data))
+    end
+
+    test "Merging multiple intermediate files into a multiple files" do
+      test_data = [
+        [8, 15, 22, 30, 34],
+        [1, 3, 133, 220, 1013],
+        [4, 19, 22, 445, 87],
+        [7, 22, 35, 48, 53],
+        [2, 3, 10, 11, 12]
+      ]
+
+      test_file_merging(test_data, 3)
+    end
+
+    test "Merging intermediate files of varying sizes" do
+      test_data = [
+        [-3, -1, 0, 5, 12, 15, 22, 23, 23, 25],
+        [6, 7],
+        [],
+        [-10, -8, -3, -1, 0, 1, 2, 6, 7, 11],
+        [-21, -19, -12, 4, 9, 13, 21, 23],
+        [8],
+        [-3, -1, 0, 7]
+      ]
+
+      test_file_merging(test_data, 8)
+    end
+
+    test "Merging a single intermediate file" do
+      test_data = [
+        [-3, -1, 0, 7]
+      ]
+
+      test_file_merging(test_data, 5)
+    end
+
+    test "Merging a single intermediate file containing no data" do
+      test_data = [
+        []
+      ]
+
+      test_file_merging(test_data, 5)
+    end
+
+    @tag :merge
+    test "Test with intermediate files containing random integers" do
+      file_count = 87
+
+      # Create the test data for the test files where the number of integers in
+      # each test file randomly varies from 1 to 1000
+      test_data =
+        1..file_count
+        |> Enum.map(fn _ -> Common.create_test_integers(Enum.random(1..10)) end)
+
+      test_file_merging(test_data, 10, true)
+    end
+
+    test "Test with the progress callback" do
+      test_data = [
+        [-3, -1, 0, 5, 12, 15, 22, 23, 23, 25],
+        [6, 7],
+        [],
+        [-10, -8, -3, -1, 0, 1, 2, 6, 7, 11],
+        [-21, -19, -12, 4, 9, 13, 21, 23],
+        [8],
+        [-3, -1, 0, 7]
+      ]
+
+      test_file_merging(test_data, 12, true)
+    end
+
+    @spec test_file_merging(Enum.t(), pos_integer(), boolean()) :: :ok
+    defp test_file_merging(file_contents, merge_count, test_callback \\ false) do
+      # Do any necessary mocking
+      create_merge_mocks()
+
+      # Create the test files for merging
+      file_names =
+        file_contents
+        |> Enum.with_index(1)
+        |> Enum.map(fn {file_contents, file_num} -> create_test_file(file_contents, file_num) end)
+
+      # Calculate the expected results
+      expected_merges = expected_results(file_contents, merge_count)
+
+      # Retrieve the integer IO device for callback testing
+      integer_device = integer_io_device(test_callback)
+
+      # Run the intermediate file merge
+      merged_files =
+        test_merge_intermediate_files(
+          file_names,
+          merge_count,
+          &merge_file_name/1,
+          test_callback,
+          integer_device
+        )
+
+      # Verify the results
+      verify_merge_results(expected_merges, merged_files)
+
+      # Verify the results of the merge callback
+      verify_merge_callback(integer_device, expected_merges)
+
+      # Delete the test directory
+      File.rm_rf!(@test_file_dir)
+
+      :ok
+    end
+
+    # Runs the merge intermediate files step, calling the function that is being tested.
+    @spec test_merge_intermediate_files(
+            Enum.t(),
+            pos_integer(),
+            (non_neg_integer() -> String.t()),
+            boolean(),
+            IO.device()
+          ) :: Enum.t()
+    defp test_merge_intermediate_files(file_names, merge_count, merge_file_name, false, _) do
+      IntSort.merge_intermediate_files(file_names, merge_count, merge_file_name)
+      |> Enum.to_list()
+    end
+
+    defp test_merge_intermediate_files(
+           file_names,
+           merge_count,
+           merge_file_name,
+           true,
+           integer_device
+         ) do
+      # Set up the callback that will log calls to the integer device
+      merge_callback = fn count -> IntegerFile.write_integer(integer_device, count) end
+
+      IntSort.merge_intermediate_files(file_names, merge_count, merge_file_name, merge_callback)
+      |> Enum.to_list()
+    end
+
+    # Creates a file name for a test file
+    @spec file_name(pos_integer()) :: String.t()
+    defp file_name(file_number) do
+      Path.join(@test_file_dir, "testfile#{file_number}.txt")
+    end
+
+    # Creates a file name for a merge file
+    @spec merge_file_name(pos_integer()) :: String.t()
+    defp merge_file_name(group_number) do
+      Path.join(@test_file_dir, "mergefile#{group_number}.txt")
+    end
+
+    # Creates a test file with the specified integer contents
+    @spec create_test_file(Enum.t(), String.t()) :: String.t()
+    defp create_test_file(file_content, file_num) do
+      file_name = file_name(file_num)
+
+      Test.Common.create_integer_file(file_content, file_name)
+    end
+
+    # Takes a collection of integer collections and a merge count and produces
+    # the expected result of merging those integer collections in groups the size
+    # of merge_count
+    @spec expected_results(Enum.t(), pos_integer()) :: Enum.t()
+    defp expected_results(file_contents, merge_count) do
+      file_contents
+      |> Enum.chunk_every(merge_count)
+      |> Enum.map(&expected_results(&1))
+    end
+
+    # Takes a collection of integer collections and produces the expected
+    # result of merging those integer collections
+    @spec expected_results(Enum.t()) :: Enum.t()
+    defp expected_results(file_contents) do
+      file_contents
+      |> Enum.concat()
+      |> Enum.sort()
+    end
+
+    # Verifies that the expected results match the actual merge results in the merge files
+    @spec verify_merge_results(Enum.t(), Enum.t()) :: :ok
+    defp verify_merge_results(expected_merges, merged_files) do
+      merged_files
+      # Verify that each merged file actually exists
+      |> Stream.each(fn file -> assert File.exists?(file) == true end)
+      # Load the contents of each file
+      |> Enum.map(fn file ->
+        file_contents = IntegerFile.integer_file_stream(file) |> Enum.to_list()
+
+        {file, file_contents}
+      end)
+      # Zip the expected and actual merge results together
+      |> Enum.zip(expected_merges)
+      # Compare the expected and actual merge results
+      |> Enum.each(fn {{file, actual_results}, expected_results} ->
+        assert Enum.count(actual_results) == Enum.count(expected_results),
+               "The file #{file} does not contain the expected number of integers"
+      end)
+    end
+
+    # When testing callback functionality, verifies that the callback was called correctly
+    @spec verify_merge_callback(IO.device(), Enum.t()) :: :ok
+    defp verify_merge_callback(nil, _), do: :ok
+
+    defp verify_merge_callback(integer_device, expected_merges) do
+      # Calculate the number of expected integers in the merges
+      total_count =
+        expected_merges
+        # Convert each collection of integers into a count
+        |> Enum.map(&Enum.count/1)
+        # Add all the counts together to get the total count
+        |> Enum.sum()
+
+      # Retrieve the counts from the integer device
+      {:ok, {_, device_contents}} = StringIO.close(integer_device)
+
+      callback_values =
+        device_contents
+        |> String.split()
+        |> Enum.map(&String.to_integer/1)
+
+      # Verify the counts are correct. The count is the number of integers that
+      # have been merged, so the count should start at one and end at the number
+      # of integers being merged.
+      1..total_count
+      |> Enum.zip(callback_values)
+      |> Enum.each(fn {expected_value, actual_value} ->
+        assert expected_value == actual_value
+      end)
+    end
+
+    # Creates any mocks needed to run the merge intermediate file testing
+    defp create_merge_mocks() do
+      Test.Common.stub_integer_file_mock()
+    end
+
+    # Creates a StringIO device to use in callback testing depending on whether
+    # callback testing is being performed
+    @spec integer_io_device(boolean()) :: IO.device()
+    defp integer_io_device(false), do: nil
+
+    defp integer_io_device(true) do
+      {:ok, device} = StringIO.open("")
+
+      device
     end
   end
 end

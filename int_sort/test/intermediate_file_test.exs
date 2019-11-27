@@ -3,6 +3,7 @@ defmodule IntSort.IntermediateFileTest do
 
   alias LargeSort.Shared.IntegerFile
   alias LargeSort.Shared.TestData
+  alias IntSort.Test.Common
   alias IntSort.IntermediateFile
 
   import Mox
@@ -366,7 +367,7 @@ defmodule IntSort.IntermediateFileTest do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      Common.stub_integer_file_mock()
 
       :ok
     end

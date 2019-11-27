@@ -6,8 +6,6 @@ defmodule IntSort.ChunkTest do
   alias LargeSort.Shared.TestData
   alias IntSort.Test
 
-  import Mox
-
   doctest Chunk
 
   describe "create_chunks -" do
@@ -70,7 +68,7 @@ defmodule IntSort.ChunkTest do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      Test.Common.stub_integer_file_mock()
 
       :ok
     end
@@ -225,7 +223,7 @@ defmodule IntSort.ChunkTest do
       # For this test, we want to use the functions in the actual module
       # for the mock module, so we'll just have mock module share the
       # functionality
-      stub_with(IntSort.IntegerFileMock, LargeSort.Shared.IntegerFile)
+      Test.Common.stub_integer_file_mock()
 
       :ok
     end
