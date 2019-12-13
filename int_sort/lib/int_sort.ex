@@ -8,6 +8,10 @@ defmodule IntSort do
 
   @integer_file Application.get_env(:int_sort, :integer_file)
 
+  # The chunk files represent the first generation of merge files so the first files
+  # that are merged will be Gen 2
+  @initial_merge_gen 2
+
   @doc """
   Chunks an integer file and writes the sorted chunks to chunk files
 
@@ -53,6 +57,127 @@ defmodule IntSort do
   def integer_count(input_file) do
     @integer_file.integer_file_stream(input_file)
     |> @integer_file.integer_count()
+  end
+
+  @doc """
+  Takes a collection of intermediate files and performs merges on those files until a single
+  file remains
+
+  ## Parameters
+
+  - files: A collection of the paths of files to be merged
+  - merge_count: The number of files to merge at once as part of a single merge group
+  - gen_file_name: The function that creates the file path for a gen file, which is an
+    intermediate file associated with a particular merge generation and merge file group,
+    which will contain the results of the merge. The first parameter is the merge generation
+    number and the second parameter is the merge group number.
+  - merge_file_gen: The function that performs the entire merge process for each merge
+    generation. See the documentation on `IntSort.merge_intermediate_files/4` for details
+    regarding what this function received. Ideally, `IntSort.merge_intermediate_files/4` will
+    be passed as this parameter, but under other circumstances (such as testing) a different
+    function can be passed.
+  - remove_files: The function that will remove any intermediate files that are no longer needed.
+    This function receives a collection of file paths to be removed.
+    If you don't want to remove intermediate files, then pass in a function that does nothing.
+  - integer_merged: A function that is called when an integer is merged. This
+    function takes two parameters. The first parameter is the merge generation and the second
+    parameter is the number of integers merged during that particular generation. This function
+    can be used to display or measure merge progress
+
+  ## Returns
+
+  The path of the file containing all the integers merged together
+  """
+  @spec total_merge(
+          Enum.t(),
+          pos_integer(),
+          (non_neg_integer(), non_neg_integer() -> String.t()),
+          (Enum.t(),
+           pos_integer(),
+           (non_neg_integer() -> String.t()),
+           (non_neg_integer() -> :ok) ->
+             Enum.t()),
+          (Enum.t() -> :ok),
+          (non_neg_integer(), non_neg_integer() -> :ok)
+        ) :: String.t()
+  def total_merge(
+        files,
+        merge_count,
+        gen_file_name,
+        merge_file_gen,
+        remove_files,
+        integer_merged \\ fn _, _ -> :ok end
+      ) do
+    # Do a recursive merge
+    [merged_file] =
+      total_merge(
+        files,
+        Enum.count(files),
+        @initial_merge_gen,
+        merge_count,
+        gen_file_name,
+        merge_file_gen,
+        remove_files,
+        integer_merged
+      )
+
+    # Take the remaining merge file and return it
+    merged_file
+  end
+
+  # The recursive implementation of the total_merge function, which returns the merge files resulting from each merge iteration
+  @spec total_merge(
+          Enum.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          pos_integer(),
+          (non_neg_integer(), non_neg_integer() -> String.t()),
+          (Enum.t(),
+           pos_integer(),
+           (non_neg_integer() -> String.t()),
+           (non_neg_integer() -> :ok) ->
+             Enum.t()),
+          (Enum.t() -> :ok),
+          (non_neg_integer(), non_neg_integer() -> :ok)
+        ) :: Enum.t()
+  defp total_merge(files, file_count, _, _, _, _, _, _) when file_count <= 1 do
+    files
+  end
+
+  defp total_merge(
+         files,
+         _,
+         merge_gen,
+         merge_count,
+         gen_file_name,
+         merge_file_gen,
+         remove_files,
+         integer_merged
+       ) do
+    # Create the function that creates a merge file name for this generation
+    merge_file_name = fn num -> gen_file_name.(merge_gen, num) end
+
+    # Create the callback function that gets called to keep track of merge progress
+    gen_integer_merged = fn count -> integer_merged.(merge_gen, count) end
+
+    # Perform the merge for this merge generation
+    merged_files =
+      merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
+
+    # Remove any files that were merged
+    remove_files.(files)
+
+    # Do a recursive call to merge the next generation of merged files
+    total_merge(
+      merged_files,
+      Enum.count(merged_files),
+      merge_gen + 1,
+      merge_count,
+      gen_file_name,
+      merge_file_gen,
+      remove_files,
+      integer_merged
+    )
   end
 
   @doc """
@@ -110,8 +235,9 @@ defmodule IntSort do
       # Call the function to do the merging for this file group and count how many
       # integers are being merged, which also has the effect of causing the stream
       # processing to start running.
-      merge_count = merge_file_group(file_group, group_file_name, group_integer_merged)
-      |> Enum.count()
+      merge_count =
+        merge_file_group(file_group, group_file_name, group_integer_merged)
+        |> Enum.count()
 
       # Return the file name and the cumulative number of merged integers
       {group_file_name, total_count + merge_count}

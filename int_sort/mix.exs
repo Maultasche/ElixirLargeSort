@@ -26,6 +26,8 @@ defmodule IntSort.MixProject do
       {:largesort_shared, path: "../largesort_shared"},
       {:progress_bar, "~> 2.0"},
       {:mox, "~> 0.5.1", only: [:test]},
+      {:poison, "~> 4.0", only: [:test]},
+      #{:math, "~> 0.3.0", only: [:test]},
       {:int_gen, path: "../int_gen", only: [:test]}
     ]
   end

@@ -309,7 +309,6 @@ defmodule IntSort.Test do
       test_file_merging(test_data, 5)
     end
 
-    @tag :merge
     test "Test with intermediate files containing random integers" do
       file_count = 87
 
@@ -507,6 +506,174 @@ defmodule IntSort.Test do
       {:ok, device} = StringIO.open("")
 
       device
+    end
+  end
+
+  describe "total_merge" do
+    # - Single merge
+    # - Two merges
+    # - Ten merges
+    # - Merge count of 1
+    # - Merge count larger than number of files
+    # - Merge count equal to number of files
+    # - Merge count smaller than number of files
+
+    # In every test
+    # - Verify every file is merged
+    # - Verify that the correct number of merges happened with the correct merge information
+    # - Verify that the gen files are created the correct number of times with the correct gen and merge numbers
+    # - Verify that the remove file function is called
+    # - Verify that the integer merged callback function is called the correct number of times with the correct data
+
+    # Performs a total merge test
+    defp test_total_merge(file_num, merge_count) do
+      # Create the test files. These do not have to be real files because we aren't testing
+      # the real file merge functionality. There are different tests for that.
+      test_files = test_file_names(1, file_num)
+
+      # Create the function that creates the name of the merge files
+      {gen_file_name, gen_file_device} = gen_file_name_func()
+
+      # Create the function that performs the merge of each merge generation. All the test
+      # version of this function does is note which files that data that was passed to it
+      {merge_file_gen, merge_device} = merge_file_gen_func()
+
+      # Create the function that removes the unneeded intermediate files
+      {remove_files, remove_files_device} = remove_files_func()
+
+      # Create the function that is called every time an integer is merged
+      {integer_merged, integer_merged_device} = integer_merged_func()
+
+      # Test the total merge process
+      output_file = IntSort.total_merge(test_files, merge_count, gen_file_name, merge_file_gen, remove_files, integer_merged)
+
+      # Verify the results
+      verify_total_merge_results(output_file, Enum.count(files), merge_count, %{
+        gen_file: gen_file_device,
+        merge: merge_device,
+        remove: remove_files_device,
+        integer_merged: integer_merged_device
+      })
+    end
+
+    # Creates a sequence of file names for use in the test
+    defp test_file_names(gen, count) do
+      1..count
+      |> Enum.map(fn file_num -> IntSort.gen_file_name(gen, file_num) end)
+    end
+
+    # Creates and returns the test gen_file_name function along with the StringIO device it writes to
+    defp gen_file_name_func() do
+      gen_file_device = test_output_device()
+
+      gen_file_name = fn gen, num ->
+        IO.puts(gen_file_device, "#{gen} #{num}\n")
+
+        IntSort.gen_file_name(gen, num)
+      end
+
+      {gen_file_name, gen_file_device}
+    end
+
+    # Create and returns the merge_file_gen function along with the StringIO device it writes to
+    defp merge_file_gen_func() do
+      merge_device = test_output_device()
+
+      merge_file_gen = fn files, merge_count, merge_file_name, integer_merged ->
+        # Verify that the callback functions are actually functions with the expected arity
+        assert is_function(merge_file_name, 1) == true
+        assert is_function(integer_merged, 1) == true
+
+        # Write the files, the merge count, and a merge file name to the StringIO device as JSON
+        merge_data = %{merge_count: merge_count, files: files, merge_file: merge_file_name.(1)}
+
+        IO.puts(merge_device, "#{Poison.encode!(merge_data)}\n")
+
+        # Call the integer_merged function once to test that the function works correctly
+        integer_merged.(1)
+
+        # Return a new set of test files that similates merge
+        output_file_count = ceil(Enum.count(files) / merge_count)
+
+        # Generate and return the names of the output files
+        1..output_file_count
+        |> Enum.map(merge_file_name)
+      end
+
+      {merge_file_gen, merge_device}
+    end
+
+    # Create and returns the remove_files function along with the StringIO device it writes to
+    defp remove_files_func() do
+      remove_files_device = test_output_device()
+
+      remove_files = fn files ->
+        IO.puts(remove_files_device, "#{Poison.encode!(files)}\n")
+
+        :ok
+      end
+
+      {remove_files, remove_files_device}
+    end
+
+    # Create and returns the integer_merged function along with the StringIO device it writes to
+    defp integer_merged_func() do
+      integer_merged_device = test_output_device()
+
+      integer_merged = fn gen, count ->
+        merged_data = %{gen: gen, count: count}
+
+        IO.puts(integer_merged_device, "#{Poison.encode!(merged_data)}\n")
+
+        :ok
+      end
+
+      {integer_merged, integer_merged_device}
+    end
+
+    # Creates a test StringIO device and stream for writing to
+    defp test_output_device() do
+      {:ok, device} = StringIO.open("")
+
+      device
+    end
+
+    # Verifies the total merge results
+    @spec verify_total_merge_results(String.t(), non_neg_integer(), non_neg_integer(), %{gen_file: IO.device(), merge: IO.device(), remove: IO.device(), integer_merged: IO.device()}) :: :ok
+    defp verify_total_merge_results(output_file, file_count, merge_count, test_devices) do
+      # Calculate the number of merge generations
+      merge_gens = ceil(log(file_count, merge_count))
+
+      # Verify the output file
+      :ok
+    end
+
+    defp verify_output_file(output_file, merge_gens) do
+
+    end
+
+    #TODO: Replace this with a Math library dependency
+
+    @doc """
+    Calculates the base-*b* logarithm of *x*
+    Note that variants for the most common logarithms exist that are faster and more precise.
+    See also `Math.log/1`, `Math.log2/1` and `Math.log10/1`.
+    ## Examples
+        iex> Math.log(5, 5)
+        1.0
+        iex> Math.log(20, 2) <~> Math.log2(20)
+        true
+        iex> Math.log(20, 10) <~> Math.log10(20)
+        true
+        iex> Math.log(2, 4)
+        0.5
+        iex> Math.log(10, 4)
+        1.6609640474436813
+    """
+    @spec log(x, number) :: float
+    def log(x, x), do: 1.0
+    def log(x, b) do
+      :math.log(x) / :math.log(b)
     end
   end
 end
