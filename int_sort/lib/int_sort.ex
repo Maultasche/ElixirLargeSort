@@ -66,7 +66,8 @@ defmodule IntSort do
   ## Parameters
 
   - files: A collection of the paths of files to be merged
-  - merge_count: The number of files to merge at once as part of a single merge group
+  - merge_count: The number of files to merge at once as part of a single merge group. The
+    merge count must be at least 2
   - gen_file_name: The function that creates the file path for a gen file, which is an
     intermediate file associated with a particular merge generation and merge file group,
     which will contain the results of the merge. The first parameter is the merge generation
@@ -107,7 +108,7 @@ defmodule IntSort do
         merge_file_gen,
         remove_files,
         integer_merged \\ fn _, _ -> :ok end
-      ) do
+      ) when merge_count > 1 do
     # Do a recursive merge
     [merged_file] =
       total_merge(
@@ -154,6 +155,7 @@ defmodule IntSort do
          remove_files,
          integer_merged
        ) do
+
     # Create the function that creates a merge file name for this generation
     merge_file_name = fn num -> gen_file_name.(merge_gen, num) end
 
@@ -161,8 +163,7 @@ defmodule IntSort do
     gen_integer_merged = fn count -> integer_merged.(merge_gen, count) end
 
     # Perform the merge for this merge generation
-    merged_files =
-      merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
+    merged_files = merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
 
     # Remove any files that were merged
     remove_files.(files)

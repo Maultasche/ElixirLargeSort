@@ -510,20 +510,33 @@ defmodule IntSort.Test do
   end
 
   describe "total_merge" do
-    # - Single merge
-    # - Two merges
-    # - Ten merges
-    # - Merge count of 1
-    # - Merge count larger than number of files
-    # - Merge count equal to number of files
-    # - Merge count smaller than number of files
+    test "Testing a single merge" do
+      test_total_merge(10, 10)
+    end
 
-    # In every test
-    # - Verify every file is merged
-    # - Verify that the correct number of merges happened with the correct merge information
-    # - Verify that the gen files are created the correct number of times with the correct gen and merge numbers
-    # - Verify that the remove file function is called
-    # - Verify that the integer merged callback function is called the correct number of times with the correct data
+    test "Testing two merges" do
+      test_total_merge(34, 10)
+    end
+
+    test "Testing with a large number of merges" do
+      test_total_merge(1045, 2)
+    end
+
+    test "Testing with a merge count of 2" do
+      test_total_merge(10,2)
+    end
+
+    test "Testing with a merge count larger than number of files" do
+      test_total_merge(8, 12)
+    end
+
+    test "Testing with a merge count equal to number of files" do
+      test_total_merge(12, 12)
+    end
+
+    test "Testing with a merge count smaller than number of files" do
+      test_total_merge(12, 7)
+    end
 
     # Performs a total merge test
     defp test_total_merge(file_num, merge_count) do
@@ -545,10 +558,18 @@ defmodule IntSort.Test do
       {integer_merged, integer_merged_device} = integer_merged_func()
 
       # Test the total merge process
-      output_file = IntSort.total_merge(test_files, merge_count, gen_file_name, merge_file_gen, remove_files, integer_merged)
+      output_file =
+        IntSort.total_merge(
+          test_files,
+          merge_count,
+          gen_file_name,
+          merge_file_gen,
+          remove_files,
+          integer_merged
+        )
 
       # Verify the results
-      verify_total_merge_results(output_file, Enum.count(files), merge_count, %{
+      verify_total_merge_results(output_file, Enum.count(test_files), merge_count, %{
         gen_file: gen_file_device,
         merge: merge_device,
         remove: remove_files_device,
@@ -563,11 +584,12 @@ defmodule IntSort.Test do
     end
 
     # Creates and returns the test gen_file_name function along with the StringIO device it writes to
+    @spec gen_file_name_func() :: {(non_neg_integer(), non_neg_integer() -> String.t()), IO.device()}
     defp gen_file_name_func() do
       gen_file_device = test_output_device()
 
       gen_file_name = fn gen, num ->
-        IO.puts(gen_file_device, "#{gen} #{num}\n")
+        IO.puts(gen_file_device, "#{gen} #{num}")
 
         IntSort.gen_file_name(gen, num)
       end
@@ -576,6 +598,12 @@ defmodule IntSort.Test do
     end
 
     # Create and returns the merge_file_gen function along with the StringIO device it writes to
+    @spec merge_file_gen_func() ::
+            {(Enum.t(),
+             pos_integer(),
+             (non_neg_integer() -> String.t()),
+             (non_neg_integer() -> :ok) ->
+               Enum.t()), IO.device()}
     defp merge_file_gen_func() do
       merge_device = test_output_device()
 
@@ -584,31 +612,34 @@ defmodule IntSort.Test do
         assert is_function(merge_file_name, 1) == true
         assert is_function(integer_merged, 1) == true
 
-        # Write the files, the merge count, and a merge file name to the StringIO device as JSON
-        merge_data = %{merge_count: merge_count, files: files, merge_file: merge_file_name.(1)}
-
-        IO.puts(merge_device, "#{Poison.encode!(merge_data)}\n")
-
         # Call the integer_merged function once to test that the function works correctly
         integer_merged.(1)
 
         # Return a new set of test files that similates merge
         output_file_count = ceil(Enum.count(files) / merge_count)
 
-        # Generate and return the names of the output files
-        1..output_file_count
-        |> Enum.map(merge_file_name)
+        # Generate the names of the files that would have resulted from this fake merge
+        merge_files = 1..output_file_count |> Enum.map(merge_file_name)
+
+        # Write the files, the merge count, and a merge file name to the StringIO device as JSON
+        merge_data = %{merge_count: merge_count, files: files, merge_files: merge_files}
+
+        IO.puts(merge_device, Poison.encode!(merge_data))
+
+        # The merge files are the output
+        merge_files
       end
 
       {merge_file_gen, merge_device}
     end
 
     # Create and returns the remove_files function along with the StringIO device it writes to
+    @spec remove_files_func() :: {(Enum.t() -> :ok), IO.device()}
     defp remove_files_func() do
       remove_files_device = test_output_device()
 
       remove_files = fn files ->
-        IO.puts(remove_files_device, "#{Poison.encode!(files)}\n")
+        IO.puts(remove_files_device, Poison.encode!(files))
 
         :ok
       end
@@ -623,7 +654,7 @@ defmodule IntSort.Test do
       integer_merged = fn gen, count ->
         merged_data = %{gen: gen, count: count}
 
-        IO.puts(integer_merged_device, "#{Poison.encode!(merged_data)}\n")
+        IO.puts(integer_merged_device, Poison.encode!(merged_data))
 
         :ok
       end
@@ -639,20 +670,149 @@ defmodule IntSort.Test do
     end
 
     # Verifies the total merge results
-    @spec verify_total_merge_results(String.t(), non_neg_integer(), non_neg_integer(), %{gen_file: IO.device(), merge: IO.device(), remove: IO.device(), integer_merged: IO.device()}) :: :ok
+    @spec verify_total_merge_results(String.t(), non_neg_integer(), non_neg_integer(), %{
+            gen_file: IO.device(),
+            merge: IO.device(),
+            remove: IO.device(),
+            integer_merged: IO.device()
+          }) :: :ok
     defp verify_total_merge_results(output_file, file_count, merge_count, test_devices) do
       # Calculate the number of merge generations
-      merge_gens = ceil(log(file_count, merge_count))
+      merge_gens = ceil(log(file_count, merge_count)) + 1
 
-      # Verify the output file
+      # Verify the name of the output file to ensure that it has the correct name
+      verify_output_file(output_file, merge_gens)
+
+      # Verify that the gen file name function was called the correct number of times
+      {:ok, {_, gen_file_contents}} = test_devices |> Map.get(:gen_file) |> StringIO.close()
+
+      verify_gen_files(gen_file_contents, merge_gens, file_count, merge_count)
+
+      # Verify that the file merge function was called the correct number of times
+      {:ok, {_, merge_file_contents}} = test_devices |> Map.get(:merge) |> StringIO.close()
+
+      verify_merge_files(merge_file_contents, merge_gens, file_count, merge_count)
+
+      # Verify that the remove file function was called correctly
+      {:ok, {_, remove_file_contents}} = test_devices |> Map.get(:remove) |> StringIO.close()
+
+      verify_remove_files(remove_file_contents, merge_gens, file_count, merge_count)
+
+      # Verify that the integer_merged function was called correctly
+      {:ok, {_, integer_merged_contents}} = test_devices |> Map.get(:integer_merged) |> StringIO.close()
+
+      verify_integer_merged(integer_merged_contents, merge_gens)
+
       :ok
     end
 
+    # Verifies the output file name
+    @spec verify_output_file(String.t(), non_neg_integer()) :: :ok
     defp verify_output_file(output_file, merge_gens) do
-
+      assert output_file == IntSort.gen_file_name(merge_gens, 1)
     end
 
-    #TODO: Replace this with a Math library dependency
+    # Verifies that the gen file name function was called the correct number of times
+    # with the correct data]
+    @spec verify_gen_files(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+            :ok
+    defp verify_gen_files(gen_file_contents, merge_gens, file_count, merge_count) do
+      expected_data =
+        2..merge_gens
+        |> Enum.map(fn gen -> {gen, ceil(file_count / pow(merge_count, gen - 1))} end)
+        |> Enum.flat_map(fn {gen, count} -> Enum.map(1..count, &[gen, &1]) end)
+
+      actual_data =
+        gen_file_contents
+        |> String.trim()
+        |> String.split([" ", "\n"])
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.chunk_every(2)
+
+      compare(expected_data, actual_data)
+    end
+
+    # Verifies that the file merging function was called correctly for each merge generation
+    @spec verify_merge_files(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+            :ok
+    defp verify_merge_files(merge_file_contents, merge_gens, file_count, merge_count) do
+      expected_data =
+        1..merge_gens
+        # Create the file counts for each merge generation
+        |> Enum.map(fn gen ->
+          %{
+            gen: gen,
+            file_count: ceil(file_count / pow(merge_count, gen - 1)),
+            merge_file_count: ceil(file_count / pow(merge_count, gen))
+          }
+        end)
+        # Transform the counts into file names
+        |> Enum.map(fn %{gen: gen, file_count: file_count, merge_file_count: merge_file_count} ->
+          %{
+            "files" => 1..file_count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen, file_num) end),
+            "merge_count" => merge_count,
+            "merge_files" => 1..merge_file_count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen + 1, file_num) end)
+          }
+        end)
+
+      actual_data =
+        merge_file_contents
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&Poison.decode!/1)
+
+      compare(expected_data, actual_data)
+    end
+
+    # Verifies that the file removal function was called correctly for each merge generation
+    @spec verify_remove_files(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) :: :ok
+    defp verify_remove_files(remove_file_contents, merge_gens, file_count, merge_count) do
+      expected_data =
+        1..(merge_gens - 1)
+        # Create the file counts for each merge generation
+        |> Enum.map(fn gen -> {gen, ceil(file_count / pow(merge_count, gen - 1))} end)
+        # Transform file count into file names
+        |> Enum.map(fn {gen, count} ->
+          1..count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen, file_num) end)
+        end)
+
+      actual_data =
+        remove_file_contents
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&Poison.decode!/1)
+
+      compare(expected_data, actual_data)
+    end
+
+    # Verifies that the integer merged function was called correctly for each merge generation
+    @spec verify_integer_merged(String.t(), non_neg_integer()) :: :ok
+    defp verify_integer_merged(integer_merged_contents, merge_gens) do
+      expected_data =
+        2..(merge_gens)
+        # Create the integer counts for each merge generation. For test purposes, only one integer
+        # is in each merge generation
+        |> Enum.map(fn gen -> %{"gen" => gen, "count" => 1} end)
+
+      actual_data =
+        integer_merged_contents
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&Poison.decode!/1)
+
+      compare(expected_data, actual_data)
+    end
+
+    # Compares a collection of data to another collection of data and asserts that they contain
+    # the same data
+    @spec compare(any(), any()) :: :ok
+    defp compare(expected_data, actual_data) do
+      expected_data
+      |> Enum.zip(actual_data)
+      |> Enum.each(fn {expected, actual} -> assert expected == actual end)
+    end
+
+    # TODO: Replace this with a Math library dependency
 
     @doc """
     Calculates the base-*b* logarithm of *x*
@@ -670,10 +830,29 @@ defmodule IntSort.Test do
         iex> Math.log(10, 4)
         1.6609640474436813
     """
-    @spec log(x, number) :: float
+    # @spec log(x, number) :: float
     def log(x, x), do: 1.0
+
     def log(x, b) do
       :math.log(x) / :math.log(b)
     end
+
+    @spec pow(number, number) :: number
+    def pow(x, n)
+
+    def pow(x, n) when is_integer(x) and is_integer(n), do: _pow(x, n)
+
+    # Float implementation. Uses erlang's math library.
+    def pow(x, n) do
+      :math.pow(x, n)
+    end
+
+    # Integer implementation. Uses Exponentiation by Squaring.
+    defp _pow(x, n, y \\ 1)
+    defp _pow(_x, 0, y), do: y
+    defp _pow(x, 1, y), do: x * y
+    defp _pow(x, n, y) when n < 0, do: _pow(1 / x, -n, y)
+    defp _pow(x, n, y) when rem(n, 2) == 0, do: _pow(x * x, div(n, 2), y)
+    defp _pow(x, n, y), do: _pow(x * x, div(n - 1, 2), x * y)
   end
 end
