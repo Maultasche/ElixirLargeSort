@@ -557,6 +557,9 @@ defmodule IntSort.Test do
       # Create the function that is called every time an integer is merged
       {integer_merged, integer_merged_device} = integer_merged_func()
 
+      # Create the function that is called every time a merge generation is completed
+      {merge_gen_completed, merge_gen_completed_device} = merge_gen_completed_func()
+
       # Test the total merge process
       output_file =
         IntSort.total_merge(
@@ -565,7 +568,8 @@ defmodule IntSort.Test do
           gen_file_name,
           merge_file_gen,
           remove_files,
-          integer_merged
+          integer_merged,
+          merge_gen_completed
         )
 
       # Verify the results
@@ -573,7 +577,8 @@ defmodule IntSort.Test do
         gen_file: gen_file_device,
         merge: merge_device,
         remove: remove_files_device,
-        integer_merged: integer_merged_device
+        integer_merged: integer_merged_device,
+        merge_gen: merge_gen_completed_device
       })
     end
 
@@ -662,6 +667,20 @@ defmodule IntSort.Test do
       {integer_merged, integer_merged_device}
     end
 
+    # Create and returns the merge_gen_completed function along with the StringIO device it writes to
+    @spec merge_gen_completed_func() :: {(non_neg_integer() -> :ok), IO.device()}
+    defp merge_gen_completed_func() do
+      merge_gen_completed_device = test_output_device()
+
+      merge_gen_completed = fn gen ->
+        IO.puts(merge_gen_completed_device, Poison.encode!(gen))
+
+        :ok
+      end
+
+      {merge_gen_completed, merge_gen_completed_device}
+    end
+
     # Creates a test StringIO device and stream for writing to
     defp test_output_device() do
       {:ok, device} = StringIO.open("")
@@ -677,6 +696,9 @@ defmodule IntSort.Test do
             integer_merged: IO.device()
           }) :: :ok
     defp verify_total_merge_results(output_file, file_count, merge_count, test_devices) do
+      # Reusable function for extracting the contents of a test device
+      device_contents = fn key -> test_devices |> Map.get(key) |> StringIO.close() end
+
       # Calculate the number of merge generations
       merge_gens = ceil(log(file_count, merge_count)) + 1
 
@@ -684,24 +706,29 @@ defmodule IntSort.Test do
       verify_output_file(output_file, merge_gens)
 
       # Verify that the gen file name function was called the correct number of times
-      {:ok, {_, gen_file_contents}} = test_devices |> Map.get(:gen_file) |> StringIO.close()
+      {:ok, {_, gen_file_contents}} = device_contents.(:gen_file)
 
       verify_gen_files(gen_file_contents, merge_gens, file_count, merge_count)
 
       # Verify that the file merge function was called the correct number of times
-      {:ok, {_, merge_file_contents}} = test_devices |> Map.get(:merge) |> StringIO.close()
+      {:ok, {_, merge_file_contents}} = device_contents.(:merge)
 
       verify_merge_files(merge_file_contents, merge_gens, file_count, merge_count)
 
       # Verify that the remove file function was called correctly
-      {:ok, {_, remove_file_contents}} = test_devices |> Map.get(:remove) |> StringIO.close()
+      {:ok, {_, remove_file_contents}} = device_contents.(:remove)
 
       verify_remove_files(remove_file_contents, merge_gens, file_count, merge_count)
 
       # Verify that the integer_merged function was called correctly
-      {:ok, {_, integer_merged_contents}} = test_devices |> Map.get(:integer_merged) |> StringIO.close()
+      {:ok, {_, integer_merged_contents}} = device_contents.(:integer_merged)
 
       verify_integer_merged(integer_merged_contents, merge_gens)
+
+      # Verify that the merge_gen_completed function was called correctly
+      {:ok, {_, merge_gen_contents}} = device_contents.(:merge_gen)
+
+      verify_merge_gen_completed(merge_gen_contents, merge_gens)
 
       :ok
     end
@@ -796,6 +823,20 @@ defmodule IntSort.Test do
 
       actual_data =
         integer_merged_contents
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&Poison.decode!/1)
+
+      compare(expected_data, actual_data)
+    end
+
+    # Verifies that the merge_gen_completed function was called correctly for each merge generation
+    @spec verify_merge_gen_completed(String.t(), non_neg_integer()) :: :ok
+    defp verify_merge_gen_completed(merge_gen_contents, merge_gens) do
+      expected_data = 2..(merge_gens)
+
+      actual_data =
+        merge_gen_contents
         |> String.trim()
         |> String.split("\n")
         |> Enum.map(&Poison.decode!/1)

@@ -99,7 +99,8 @@ defmodule IntSort do
            (non_neg_integer() -> :ok) ->
              Enum.t()),
           (Enum.t() -> :ok),
-          (non_neg_integer(), non_neg_integer() -> :ok)
+          (non_neg_integer(), non_neg_integer() -> :ok),
+          (non_neg_integer() -> :ok)
         ) :: String.t()
   def total_merge(
         files,
@@ -107,7 +108,8 @@ defmodule IntSort do
         gen_file_name,
         merge_file_gen,
         remove_files,
-        integer_merged \\ fn _, _ -> :ok end
+        integer_merged \\ fn _, _ -> :ok end,
+        merge_gen_completed \\ fn _ -> :ok end
       ) when merge_count > 1 do
     # Do a recursive merge
     [merged_file] =
@@ -119,7 +121,8 @@ defmodule IntSort do
         gen_file_name,
         merge_file_gen,
         remove_files,
-        integer_merged
+        integer_merged,
+        merge_gen_completed
       )
 
     # Take the remaining merge file and return it
@@ -139,9 +142,10 @@ defmodule IntSort do
            (non_neg_integer() -> :ok) ->
              Enum.t()),
           (Enum.t() -> :ok),
-          (non_neg_integer(), non_neg_integer() -> :ok)
+          (non_neg_integer(), non_neg_integer() -> :ok),
+          (non_neg_integer() -> :ok)
         ) :: Enum.t()
-  defp total_merge(files, file_count, _, _, _, _, _, _) when file_count <= 1 do
+  defp total_merge(files, file_count, _, _, _, _, _, _, _) when file_count <= 1 do
     files
   end
 
@@ -153,7 +157,8 @@ defmodule IntSort do
          gen_file_name,
          merge_file_gen,
          remove_files,
-         integer_merged
+         integer_merged,
+         merge_gen_completed
        ) do
 
     # Create the function that creates a merge file name for this generation
@@ -164,6 +169,9 @@ defmodule IntSort do
 
     # Perform the merge for this merge generation
     merged_files = merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
+
+    # Call the callback to notify of the completion of the merge generation
+    merge_gen_completed.(merge_gen)
 
     # Remove any files that were merged
     remove_files.(files)
@@ -177,7 +185,8 @@ defmodule IntSort do
       gen_file_name,
       merge_file_gen,
       remove_files,
-      integer_merged
+      integer_merged,
+      merge_gen_completed
     )
   end
 
@@ -199,7 +208,7 @@ defmodule IntSort do
   - integer_merged: A function that is called when an integer is merged. This
     function takes a single parameter, which is the number of integers that have
     been merged during this round of merges. This function can be used to display
-    or measure merge progress
+    or measure merge progress.
 
   ## Returns
 
