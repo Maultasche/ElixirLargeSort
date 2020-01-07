@@ -39,6 +39,7 @@ defmodule IntSort do
     end)
     |> Stream.with_index(1)
     |> Stream.map(fn {_, chunk_num} -> gen_file_name(gen, chunk_num) end)
+    |> Stream.map(fn file_name -> Path.join(output_dir, file_name) end)
   end
 
   @doc """
@@ -100,7 +101,7 @@ defmodule IntSort do
              Enum.t()),
           (Enum.t() -> :ok),
           (non_neg_integer(), non_neg_integer() -> :ok),
-          (non_neg_integer() -> :ok)
+          (non_neg_integer(), non_neg_integer() -> :ok)
         ) :: String.t()
   def total_merge(
         files,
@@ -109,8 +110,9 @@ defmodule IntSort do
         merge_file_gen,
         remove_files,
         integer_merged \\ fn _, _ -> :ok end,
-        merge_gen_completed \\ fn _ -> :ok end
-      ) when merge_count > 1 do
+        merge_gen_completed \\ fn _, _ -> :ok end
+      )
+      when merge_count > 1 do
     # Do a recursive merge
     [merged_file] =
       total_merge(
@@ -143,7 +145,7 @@ defmodule IntSort do
              Enum.t()),
           (Enum.t() -> :ok),
           (non_neg_integer(), non_neg_integer() -> :ok),
-          (non_neg_integer() -> :ok)
+          (non_neg_integer(), non_neg_integer() -> :ok)
         ) :: Enum.t()
   defp total_merge(files, file_count, _, _, _, _, _, _, _) when file_count <= 1 do
     files
@@ -160,7 +162,6 @@ defmodule IntSort do
          integer_merged,
          merge_gen_completed
        ) do
-
     # Create the function that creates a merge file name for this generation
     merge_file_name = fn num -> gen_file_name.(merge_gen, num) end
 
@@ -171,7 +172,7 @@ defmodule IntSort do
     merged_files = merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
 
     # Call the callback to notify of the completion of the merge generation
-    merge_gen_completed.(merge_gen)
+    merge_gen_completed.(merge_gen, Enum.count(merged_files))
 
     # Remove any files that were merged
     remove_files.(files)

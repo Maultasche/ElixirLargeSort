@@ -75,7 +75,7 @@ defmodule IntSort.Test do
       chunk_files = IntSort.create_chunk_files(@input_file, @output_dir, chunk_size, chunk_gen)
 
       # Verify the results
-      verify_chunk_file_results(chunk_files, test_integers, num_integers, chunk_size, chunk_gen)
+      verify_chunk_file_results(chunk_files, test_integers, num_integers, chunk_size, chunk_gen, @output_dir)
     end
 
     # Mocks any modules that need to be mocked
@@ -95,20 +95,22 @@ defmodule IntSort.Test do
             Enum.t(),
             non_neg_integer(),
             pos_integer(),
-            non_neg_integer()
+            non_neg_integer(),
+            String.t()
           ) :: :ok
     defp verify_chunk_file_results(
            chunk_files,
            test_integers,
            num_integers,
            chunk_size,
-           chunk_gen
+           chunk_gen,
+           output_dir
          ) do
       # Verify the correct number of chunk files were created
       num_chunks = Test.Common.num_chunks(num_integers, chunk_size)
 
       # Calculate the expected file names
-      expected_chunk_files = expected_file_names(chunk_gen, num_chunks)
+      expected_chunk_files = expected_file_names(chunk_gen, num_chunks, output_dir)
 
       # Calculate the expected chunks
       expected_chunks = Test.Common.expected_sorted_chunks(test_integers, chunk_size)
@@ -134,7 +136,7 @@ defmodule IntSort.Test do
     @spec verify_chunk_file(String.t(), list(integer)) :: :ok
     defp verify_chunk_file(chunk_file, expected_chunk) do
       # Open a file stream for the chunk file
-      Path.join(@output_dir, chunk_file)
+      chunk_file
       |> IntegerFile.integer_file_stream()
       |> IntegerFile.read_stream()
       |> Stream.zip(expected_chunk)
@@ -145,12 +147,13 @@ defmodule IntSort.Test do
     end
 
     # Creates a list of expected chunk file names
-    @spec expected_file_names(non_neg_integer(), non_neg_integer()) :: list(String.t())
-    defp expected_file_names(_, 0), do: []
+    @spec expected_file_names(non_neg_integer(), non_neg_integer(), String.t()) :: list(String.t())
+    defp expected_file_names(_, 0, _), do: []
 
-    defp expected_file_names(gen, num_chunks) do
+    defp expected_file_names(gen, num_chunks, output_dir) do
       1..num_chunks
       |> Enum.map(fn chunk_num -> IntSort.gen_file_name(gen, chunk_num) end)
+      |> Enum.map(fn file_name -> Path.join(output_dir, file_name) end)
     end
 
     # Deletes the test data directory
@@ -523,7 +526,7 @@ defmodule IntSort.Test do
     end
 
     test "Testing with a merge count of 2" do
-      test_total_merge(10,2)
+      test_total_merge(10, 2)
     end
 
     test "Testing with a merge count larger than number of files" do
@@ -589,7 +592,8 @@ defmodule IntSort.Test do
     end
 
     # Creates and returns the test gen_file_name function along with the StringIO device it writes to
-    @spec gen_file_name_func() :: {(non_neg_integer(), non_neg_integer() -> String.t()), IO.device()}
+    @spec gen_file_name_func() ::
+            {(non_neg_integer(), non_neg_integer() -> String.t()), IO.device()}
     defp gen_file_name_func() do
       gen_file_device = test_output_device()
 
@@ -605,10 +609,10 @@ defmodule IntSort.Test do
     # Create and returns the merge_file_gen function along with the StringIO device it writes to
     @spec merge_file_gen_func() ::
             {(Enum.t(),
-             pos_integer(),
-             (non_neg_integer() -> String.t()),
-             (non_neg_integer() -> :ok) ->
-               Enum.t()), IO.device()}
+              pos_integer(),
+              (non_neg_integer() -> String.t()),
+              (non_neg_integer() -> :ok) ->
+                Enum.t()), IO.device()}
     defp merge_file_gen_func() do
       merge_device = test_output_device()
 
@@ -668,12 +672,13 @@ defmodule IntSort.Test do
     end
 
     # Create and returns the merge_gen_completed function along with the StringIO device it writes to
-    @spec merge_gen_completed_func() :: {(non_neg_integer() -> :ok), IO.device()}
+    @spec merge_gen_completed_func() ::
+            {(non_neg_integer(), non_neg_integer() -> :ok), IO.device()}
     defp merge_gen_completed_func() do
       merge_gen_completed_device = test_output_device()
 
-      merge_gen_completed = fn gen ->
-        IO.puts(merge_gen_completed_device, Poison.encode!(gen))
+      merge_gen_completed = fn gen, file_count ->
+        IO.puts(merge_gen_completed_device, Poison.encode!(%{gen: gen, file_count: file_count}))
 
         :ok
       end
@@ -728,7 +733,7 @@ defmodule IntSort.Test do
       # Verify that the merge_gen_completed function was called correctly
       {:ok, {_, merge_gen_contents}} = device_contents.(:merge_gen)
 
-      verify_merge_gen_completed(merge_gen_contents, merge_gens)
+      verify_merge_gen_completed(merge_gen_contents, merge_gens, file_count, merge_count)
 
       :ok
     end
@@ -776,9 +781,12 @@ defmodule IntSort.Test do
         # Transform the counts into file names
         |> Enum.map(fn %{gen: gen, file_count: file_count, merge_file_count: merge_file_count} ->
           %{
-            "files" => 1..file_count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen, file_num) end),
+            "files" =>
+              1..file_count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen, file_num) end),
             "merge_count" => merge_count,
-            "merge_files" => 1..merge_file_count |> Enum.map(fn file_num -> IntSort.gen_file_name(gen + 1, file_num) end)
+            "merge_files" =>
+              1..merge_file_count
+              |> Enum.map(fn file_num -> IntSort.gen_file_name(gen + 1, file_num) end)
           }
         end)
 
@@ -792,7 +800,8 @@ defmodule IntSort.Test do
     end
 
     # Verifies that the file removal function was called correctly for each merge generation
-    @spec verify_remove_files(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) :: :ok
+    @spec verify_remove_files(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+            :ok
     defp verify_remove_files(remove_file_contents, merge_gens, file_count, merge_count) do
       expected_data =
         1..(merge_gens - 1)
@@ -816,7 +825,7 @@ defmodule IntSort.Test do
     @spec verify_integer_merged(String.t(), non_neg_integer()) :: :ok
     defp verify_integer_merged(integer_merged_contents, merge_gens) do
       expected_data =
-        2..(merge_gens)
+        2..merge_gens
         # Create the integer counts for each merge generation. For test purposes, only one integer
         # is in each merge generation
         |> Enum.map(fn gen -> %{"gen" => gen, "count" => 1} end)
@@ -831,9 +840,22 @@ defmodule IntSort.Test do
     end
 
     # Verifies that the merge_gen_completed function was called correctly for each merge generation
-    @spec verify_merge_gen_completed(String.t(), non_neg_integer()) :: :ok
-    defp verify_merge_gen_completed(merge_gen_contents, merge_gens) do
-      expected_data = 2..(merge_gens)
+    @spec verify_merge_gen_completed(
+            String.t(),
+            non_neg_integer(),
+            non_neg_integer(),
+            non_neg_integer()
+          ) :: :ok
+    defp verify_merge_gen_completed(merge_gen_contents, merge_gens, file_count, merge_count) do
+      expected_data =
+        2..merge_gens
+        # Create the file counts for each merge generation
+        |> Enum.map(fn gen ->
+          %{
+            "gen" => gen,
+            "file_count" => ceil(file_count / pow(merge_count, gen - 1))
+          }
+        end)
 
       actual_data =
         merge_gen_contents
