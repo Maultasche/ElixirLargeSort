@@ -41,9 +41,10 @@ defmodule IntSort.CLI.Args do
         help: :boolean,
         input_file: :string,
         chunk_size: :integer,
-        keep_intermediate: :boolean
+        keep_intermediate: :boolean,
+        silent: :boolean
       ],
-      aliases: [h: :help, i: :input_file, c: :chunk_size, k: :keep_intermediate]
+      aliases: [h: :help, i: :input_file, c: :chunk_size, k: :keep_intermediate, s: :silent]
     )
     |> args_to_options()
   end
@@ -89,7 +90,8 @@ defmodule IntSort.CLI.Args do
          Keyword.get(parsed_args, :input_file),
          hd(additional_args),
          Keyword.get(parsed_args, :chunk_size),
-         Keyword.get(parsed_args, :keep_intermediate, false)
+         Keyword.get(parsed_args, :keep_intermediate, false),
+         Keyword.get(parsed_args, :silent, false)
        )}
     end
   end

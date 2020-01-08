@@ -75,7 +75,14 @@ defmodule IntSort.Test do
       chunk_files = IntSort.create_chunk_files(@input_file, @output_dir, chunk_size, chunk_gen)
 
       # Verify the results
-      verify_chunk_file_results(chunk_files, test_integers, num_integers, chunk_size, chunk_gen, @output_dir)
+      verify_chunk_file_results(
+        chunk_files,
+        test_integers,
+        num_integers,
+        chunk_size,
+        chunk_gen,
+        @output_dir
+      )
     end
 
     # Mocks any modules that need to be mocked
@@ -147,7 +154,8 @@ defmodule IntSort.Test do
     end
 
     # Creates a list of expected chunk file names
-    @spec expected_file_names(non_neg_integer(), non_neg_integer(), String.t()) :: list(String.t())
+    @spec expected_file_names(non_neg_integer(), non_neg_integer(), String.t()) ::
+            list(String.t())
     defp expected_file_names(_, 0, _), do: []
 
     defp expected_file_names(gen, num_chunks, output_dir) do

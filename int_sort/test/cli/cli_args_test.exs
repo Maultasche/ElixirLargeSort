@@ -19,7 +19,7 @@ defmodule IntSort.CLI.Args.Test do
         @test_output_file
       ]
 
-      expected_options = Options.new(@test_input_file, @test_output_file, 100, true)
+      expected_options = Options.new(@test_input_file, @test_output_file, 100, true, false)
 
       test_with_args_success(test_args, expected_options)
     end
@@ -43,6 +43,7 @@ defmodule IntSort.CLI.Args.Test do
         "--chunk-size",
         "100",
         "--keep-immediate",
+        "--silent",
         "--help",
         @test_output_file
       ]
@@ -66,7 +67,7 @@ defmodule IntSort.CLI.Args.Test do
         @test_output_file
       ]
 
-      expected_options = Options.new(@test_input_file, @test_output_file, 1, true)
+      expected_options = Options.new(@test_input_file, @test_output_file, 1, true, false)
 
       test_with_args_success(test_args, expected_options)
     end
@@ -100,7 +101,30 @@ defmodule IntSort.CLI.Args.Test do
     test "Parsing args with missing keep intermediate option" do
       test_args = ["--input-file", @test_input_file, "--chunk-size", "100", @test_output_file]
 
-      expected_options = Options.new(@test_input_file, @test_output_file, 100, false)
+      expected_options = Options.new(@test_input_file, @test_output_file, 100, false, false)
+
+      test_with_args_success(test_args, expected_options)
+    end
+
+    test "Parsing args with the silent option" do
+      test_args = [
+        "--input-file",
+        @test_input_file,
+        "--chunk-size",
+        "100",
+        "--silent",
+        @test_output_file
+      ]
+
+      expected_options = Options.new(@test_input_file, @test_output_file, 100, false, true)
+
+      test_with_args_success(test_args, expected_options)
+    end
+
+    test "Parsing args with a missing silent option" do
+      test_args = ["--input-file", @test_input_file, "--chunk-size", "100", @test_output_file]
+
+      expected_options = Options.new(@test_input_file, @test_output_file, 100, false, false)
 
       test_with_args_success(test_args, expected_options)
     end

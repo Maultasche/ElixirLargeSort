@@ -115,7 +115,7 @@ defmodule IntSort do
       when merge_count > 1 do
     # Do a recursive merge
     [merged_file] =
-      total_merge(
+      do_total_merge(
         files,
         Enum.count(files),
         @initial_merge_gen,
@@ -132,7 +132,7 @@ defmodule IntSort do
   end
 
   # The recursive implementation of the total_merge function, which returns the merge files resulting from each merge iteration
-  @spec total_merge(
+  @spec do_total_merge(
           Enum.t(),
           non_neg_integer(),
           non_neg_integer(),
@@ -147,11 +147,11 @@ defmodule IntSort do
           (non_neg_integer(), non_neg_integer() -> :ok),
           (non_neg_integer(), non_neg_integer() -> :ok)
         ) :: Enum.t()
-  defp total_merge(files, file_count, _, _, _, _, _, _, _) when file_count <= 1 do
+  defp do_total_merge(files, file_count, _, _, _, _, _, _, _) when file_count <= 1 do
     files
   end
 
-  defp total_merge(
+  defp do_total_merge(
          files,
          _,
          merge_gen,
@@ -169,7 +169,9 @@ defmodule IntSort do
     gen_integer_merged = fn count -> integer_merged.(merge_gen, count) end
 
     # Perform the merge for this merge generation
-    merged_files = merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
+    merged_files =
+      merge_file_gen.(files, merge_count, merge_file_name, gen_integer_merged)
+      |> Enum.to_list()
 
     # Call the callback to notify of the completion of the merge generation
     merge_gen_completed.(merge_gen, Enum.count(merged_files))
@@ -178,17 +180,20 @@ defmodule IntSort do
     remove_files.(files)
 
     # Do a recursive call to merge the next generation of merged files
-    total_merge(
-      merged_files,
-      Enum.count(merged_files),
-      merge_gen + 1,
-      merge_count,
-      gen_file_name,
-      merge_file_gen,
-      remove_files,
-      integer_merged,
-      merge_gen_completed
-    )
+    result =
+      do_total_merge(
+        merged_files,
+        Enum.count(merged_files),
+        merge_gen + 1,
+        merge_count,
+        gen_file_name,
+        merge_file_gen,
+        remove_files,
+        integer_merged,
+        merge_gen_completed
+      )
+
+    result
   end
 
   @doc """
