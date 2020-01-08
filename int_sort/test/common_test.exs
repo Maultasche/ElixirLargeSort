@@ -90,7 +90,7 @@ defmodule IntSort.Test.Common do
   @spec create_test_integers(non_neg_integer()) :: Enum.t()
   def create_test_integers(num_integers) do
     TestData.random_integer_stream(-1000..1000)
-    |> Enum.take(num_integers)
+    |> Stream.take(num_integers)
   end
 
   @doc """

@@ -65,7 +65,7 @@ defmodule IntSort.Test do
       chunk_gen = 1
 
       # Create an integer file for use in testing
-      test_integers = Test.Common.create_test_integers(num_integers)
+      test_integers = Test.Common.create_test_integers(num_integers) |> Enum.to_list()
       IntGen.create_integer_file(@input_file, num_integers, test_integers)
 
       # Create any mocks that need to be created
