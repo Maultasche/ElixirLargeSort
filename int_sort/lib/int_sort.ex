@@ -163,7 +163,11 @@ defmodule IntSort do
          merge_gen_completed
        ) do
     # Create the function that creates a merge file name for this generation
-    merge_file_name = fn num -> gen_file_name.(merge_gen, num) end
+    merge_file_name = fn num ->
+      file = gen_file_name.(merge_gen, num)
+
+      file
+    end
 
     # Create the callback function that gets called to keep track of merge progress
     gen_integer_merged = fn count -> integer_merged.(merge_gen, count) end
@@ -239,7 +243,7 @@ defmodule IntSort do
     # Merge each file group
     |> Stream.scan({[], 0}, fn {file_group, group_num}, {_, total_count} ->
       # Get the file name for this group's merged file
-      group_file_name = merge_file_name.(group_num + 1)
+      group_file_name = merge_file_name.(group_num)
 
       # Create the function that is called every time an integer in the file
       # group is merged

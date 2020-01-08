@@ -278,6 +278,7 @@ defmodule IntSort.Test do
       test_file_merging(test_data, Enum.count(test_data))
     end
 
+    @tag :merge
     test "Merging multiple intermediate files into a multiple files" do
       test_data = [
         [8, 15, 22, 30, 34],
@@ -373,6 +374,8 @@ defmodule IntSort.Test do
           integer_device
         )
 
+      # Verify the merged file names
+      verify_merge_file_names(expected_merges, merged_files)
       # Verify the results
       verify_merge_results(expected_merges, merged_files)
 
@@ -449,6 +452,17 @@ defmodule IntSort.Test do
       file_contents
       |> Enum.concat()
       |> Enum.sort()
+    end
+
+    # Verifies that the merge file names are as expected
+    @spec verify_merge_file_names(Enum.t(), Enum.t()) :: :ok
+    defp verify_merge_file_names(expected_merges, merged_files) do
+      expected_file_names = 1..Enum.count(expected_merges)
+        |> Enum.map(&merge_file_name/1)
+
+      expected_file_names
+        |> Enum.zip(merged_files)
+        |> Enum.each(fn {expected, actual} -> assert expected == actual end)
     end
 
     # Verifies that the expected results match the actual merge results in the merge files
