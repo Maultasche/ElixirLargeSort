@@ -63,7 +63,10 @@ defmodule IntSort.CLI do
     # Merge the chunk files
     output.("Merging Gen 1 intermediate files")
 
-    merge_chunks(options, chunk_files, num_integers, Path.dirname(options.output_file), output)
+    merge_file = merge_chunks(options, chunk_files, num_integers, Path.dirname(options.output_file), output)
+
+    # Move the final merge file to the file specified in the parameters
+    File.rename!(merge_file, options.output_file)
   end
 
   # Returns the function used for output
