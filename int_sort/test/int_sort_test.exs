@@ -56,6 +56,7 @@ defmodule IntSort.Test do
       test_create_chunk_files(10, 20)
     end
 
+    @tag :chunk
     test "Creating chunk files for zero integers" do
       test_create_chunk_files(0, 10)
     end
@@ -278,7 +279,6 @@ defmodule IntSort.Test do
       test_file_merging(test_data, Enum.count(test_data))
     end
 
-    @tag :merge
     test "Merging multiple intermediate files into a multiple files" do
       test_data = [
         [8, 15, 22, 30, 34],
@@ -457,12 +457,13 @@ defmodule IntSort.Test do
     # Verifies that the merge file names are as expected
     @spec verify_merge_file_names(Enum.t(), Enum.t()) :: :ok
     defp verify_merge_file_names(expected_merges, merged_files) do
-      expected_file_names = 1..Enum.count(expected_merges)
+      expected_file_names =
+        1..Enum.count(expected_merges)
         |> Enum.map(&merge_file_name/1)
 
       expected_file_names
-        |> Enum.zip(merged_files)
-        |> Enum.each(fn {expected, actual} -> assert expected == actual end)
+      |> Enum.zip(merged_files)
+      |> Enum.each(fn {expected, actual} -> assert expected == actual end)
     end
 
     # Verifies that the expected results match the actual merge results in the merge files
@@ -535,6 +536,10 @@ defmodule IntSort.Test do
   end
 
   describe "total_merge" do
+    test "Testing merging a single file" do
+      test_total_merge(1, 10)
+    end
+
     test "Testing a single merge" do
       test_total_merge(10, 10)
     end
@@ -727,7 +732,7 @@ defmodule IntSort.Test do
       device_contents = fn key -> test_devices |> Map.get(key) |> StringIO.close() end
 
       # Calculate the number of merge generations
-      merge_gens = ceil(log(file_count, merge_count)) + 1
+      merge_gens = Common.merge_generations(file_count, merge_count)
 
       # Verify the name of the output file to ensure that it has the correct name
       verify_output_file(output_file, merge_gens)
@@ -776,10 +781,18 @@ defmodule IntSort.Test do
         |> Enum.map(fn gen -> {gen, ceil(file_count / pow(merge_count, gen - 1))} end)
         |> Enum.flat_map(fn {gen, count} -> Enum.map(1..count, &[gen, &1]) end)
 
+      # IO.puts "Contents: #{inspect(gen_file_contents)}"
+      # data = gen_file_contents
+      #   |> String.trim()
+      #   |> String.split([" ", "\n"])
+
+      # IO.puts("Data: #{inspect(data)}")
+
       actual_data =
         gen_file_contents
         |> String.trim()
         |> String.split([" ", "\n"])
+        |> Enum.reject(fn text -> text == "" end)
         |> Enum.map(&String.to_integer/1)
         |> Enum.chunk_every(2)
 
@@ -816,6 +829,7 @@ defmodule IntSort.Test do
         merge_file_contents
         |> String.trim()
         |> String.split("\n")
+        |> Enum.reject(fn text -> text == "" end)
         |> Enum.map(&Poison.decode!/1)
 
       compare(expected_data, actual_data)
@@ -838,6 +852,7 @@ defmodule IntSort.Test do
         remove_file_contents
         |> String.trim()
         |> String.split("\n")
+        |> Enum.reject(fn text -> text == "" end)
         |> Enum.map(&Poison.decode!/1)
 
       compare(expected_data, actual_data)
@@ -856,6 +871,7 @@ defmodule IntSort.Test do
         integer_merged_contents
         |> String.trim()
         |> String.split("\n")
+        |> Enum.reject(fn text -> text == "" end)
         |> Enum.map(&Poison.decode!/1)
 
       compare(expected_data, actual_data)
@@ -883,6 +899,7 @@ defmodule IntSort.Test do
         merge_gen_contents
         |> String.trim()
         |> String.split("\n")
+        |> Enum.reject(fn text -> text == "" end)
         |> Enum.map(&Poison.decode!/1)
 
       compare(expected_data, actual_data)

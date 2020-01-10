@@ -63,7 +63,8 @@ defmodule IntSort.CLI do
     # Merge the chunk files
     output.("Merging Gen 1 intermediate files")
 
-    merge_file = merge_chunks(options, chunk_files, num_integers, Path.dirname(options.output_file), output)
+    merge_file =
+      merge_chunks(options, chunk_files, num_integers, Path.dirname(options.output_file), output)
 
     # Move the final merge file to the file specified in the parameters
     File.rename!(merge_file, options.output_file)
@@ -76,7 +77,7 @@ defmodule IntSort.CLI do
   end
 
   defp output_func(_) do
-     fn output -> IO.puts(output) end
+    fn output -> IO.puts(output) end
   end
 
   # Prints usage information
@@ -114,14 +115,29 @@ defmodule IntSort.CLI do
   end
 
   # Merges the chunk files and returns the path to the final merged file
-  @spec merge_chunks(Options.t(), Enum.t(), non_neg_integer(), String.t(), output_func()) :: String.t()
+  @spec merge_chunks(Options.t(), Enum.t(), non_neg_integer(), String.t(), output_func()) ::
+          String.t()
+  defp merge_chunks(_, [], _, _, output) do
+    output.("There were no integers to merge. Creating an empty output file.")
+
+    empty_file = IntSort.gen_file_name(1, 1)
+
+    File.write!(empty_file, "")
+
+    empty_file
+  end
+
   defp merge_chunks(options, chunk_files, num_integers, output_dir, output) do
     # Calculate the progress update frequency for integer merging
     update_frequency = progress_update_frequency(num_integers, @progress_updates)
 
     # Perform the merge
     gen_file_name = fn gen, count -> Path.join(output_dir, IntSort.gen_file_name(gen, count)) end
-    merge_status = fn _, count -> file_merge_status(count, num_integers, update_frequency, options.silent) end
+
+    merge_status = fn _, count ->
+      file_merge_status(count, num_integers, update_frequency, options.silent)
+    end
+
     merge_gen_completed = fn gen, file_count -> merge_gen_completed(gen, file_count, output) end
     remove_files = remove_files_func(not options.keep_intermediate)
 
@@ -151,7 +167,8 @@ defmodule IntSort.CLI do
   end
 
   # Outputs the current status of the ongoing file merge
-  @spec file_merge_status(non_neg_integer(), non_neg_integer(), non_neg_integer(), boolean()) :: :ok
+  @spec file_merge_status(non_neg_integer(), non_neg_integer(), non_neg_integer(), boolean()) ::
+          :ok
   defp file_merge_status(count, total_count, update_frequency, silent) do
     update_progress_bar(count, total_count, update_frequency, silent)
   end
@@ -178,7 +195,8 @@ defmodule IntSort.CLI do
     output.("Determining the number of integers and chunks in the input file...")
   end
 
-  @spec display_integer_counting_result({non_neg_integer(), non_neg_integer()}, output_func()) :: {non_neg_integer(), non_neg_integer()}
+  @spec display_integer_counting_result({non_neg_integer(), non_neg_integer()}, output_func()) ::
+          {non_neg_integer(), non_neg_integer()}
   defp display_integer_counting_result(data = {integers, chunks}, output) do
     output.("Number of Integers: #{integers}")
     output.("Number of Chunks: #{chunks}")
@@ -198,7 +216,8 @@ defmodule IntSort.CLI do
   # This clause updates the progress bar occasionally when a larger number of items
   # are being processed so that the program doesn't spend all its time on progress
   # bar updates
-  @spec update_progress_bar(non_neg_integer(), non_neg_integer(), non_neg_integer(), boolean()) :: :ok
+  @spec update_progress_bar(non_neg_integer(), non_neg_integer(), non_neg_integer(), boolean()) ::
+          :ok
   defp update_progress_bar(current_count, total_count, update_frequency, false)
        when rem(current_count, update_frequency) == 0 do
     ProgressBar.render(current_count, total_count, progress_bar_format())
@@ -222,4 +241,9 @@ defmodule IntSort.CLI do
       suffix: :count
     ]
   end
+
+  @doc """
+  Retrieves the number of files merged at the same time
+  """
+  def merge_files(), do: @merge_files
 end
