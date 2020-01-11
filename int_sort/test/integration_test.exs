@@ -5,7 +5,6 @@ defmodule IntSort.IntegrationTests do
   alias IntSort.Test.Common
   alias IntSort
 
-
   describe "Integration Tests -" do
     @input_file "test_data/test_integers.txt"
     @output_file "test_data/sorted_integers.txt"
