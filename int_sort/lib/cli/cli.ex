@@ -2,7 +2,7 @@ defmodule IntSort.CLI do
   @moduledoc """
   Handles the command line and options parsing logic
   """
-
+  alias LargeSort.Shared.CLI
   alias IntSort.CLI.Args
   alias IntSort.CLI.Options
   alias IntSort.Chunk
@@ -49,8 +49,8 @@ defmodule IntSort.CLI do
     # Retrieve the function to use for output
     output = output_func(options)
 
-    time_description = measure(fn -> process(options, output) end)
-    |> ellapsed_time_description()
+    time_description = CLI.measure(fn -> process(options, output) end)
+    |> CLI.ellapsed_time_description()
 
     output.("")
     output.(time_description)
@@ -72,6 +72,7 @@ defmodule IntSort.CLI do
     output.("#{Enum.count(chunk_files)} Gen 1 intermediate files were generated")
 
     # Merge the chunk files
+    output.("")
     output.("Merging Gen 1 intermediate files")
 
     merge_file =
@@ -188,6 +189,8 @@ defmodule IntSort.CLI do
   @spec merge_gen_completed(non_neg_integer(), non_neg_integer(), output_func()) :: :ok
   defp merge_gen_completed(gen, file_count, output) when file_count > 1 do
     output.("Gen #{gen - 1} files were merged into #{file_count} Gen #{gen} files")
+    output.("")
+    output.("Merging Gen #{gen} intermediate files")
   end
 
   defp merge_gen_completed(gen, _, output) do
@@ -257,111 +260,4 @@ defmodule IntSort.CLI do
   Retrieves the number of files merged at the same time
   """
   def merge_files(), do: @merge_files
-
-  # Measures how long it takes for a function to complete and returns the amount
-  # of time in milliseconds
-  @spec measure(function()) :: non_neg_integer()
-  defp measure(function) do
-    function
-    |> :timer.tc()
-    |> elem(0)
-    |> Kernel.div(1_000)
-  end
-
-  # Returns a text description of the ellapsed time
-  @spec ellapsed_time_description(non_neg_integer()) :: String.t()
-  defp ellapsed_time_description(0), do: "0ms"
-
-  defp ellapsed_time_description(num_ms) do
-    # The number of time units (hours, minutes, seconds, ms) are stored in a list
-    # that is built up and the remaining milliseconds are passed to the next function
-    # until we've built up a list of time units. We have to reverse the time units
-    # at the end because they've been in reverse order
-    {time_units, _} =
-      {[], num_ms}
-      |> hours_ms()
-      |> minutes_ms()
-      |> seconds_ms()
-      |> milliseconds_ms()
-
-    # Take the first two non-zero time units and assign them a unit type number
-    time_units =
-      time_units
-      |> Enum.reverse()
-      |> Enum.with_index(1)
-      |> Enum.filter(fn {unit_count, _} -> unit_count > 0 end)
-      |> Enum.take(2)
-
-    # Take the time units and unit type numbers and convert them into a description string
-    time_units
-    |> Enum.map(&time_description/1)
-    |> Enum.join(" ")
-  end
-
-  # Keeps track of the current time units
-  @type time_unit_list() :: list(non_neg_integer)
-
-  # Keeps track of the current time units and the remaining milliseconds
-  @type time_units_remaining() :: {time_unit_list(), non_neg_integer()}
-
-  # Extracts the number of milliseconds that will go evenly into a unit of time and returns number
-  # of time units and the remainder of milliseconds that did not fit evenly into a time unit
-  @spec unit_ms(time_units_remaining(), non_neg_integer()) :: time_units_remaining()
-  defp unit_ms({units, num_ms}, ms_in_unit) do
-    current_units = div(num_ms, ms_in_unit)
-    remainder = rem(num_ms, ms_in_unit)
-
-    {[current_units | units], remainder}
-  end
-
-  # Calculates the number of milliseconds in an hour and returns that along with the remaining
-  # milliseconds
-  @spec hours_ms(time_units_remaining()) :: time_units_remaining()
-  defp hours_ms(time_units), do: unit_ms(time_units, 3_600_000)
-
-  # Calculates the number of milliseconds in a minute and returns that along with the remaining
-  # milliseconds
-  @spec minutes_ms(time_units_remaining()) :: time_units_remaining()
-  defp minutes_ms(time_units), do: unit_ms(time_units, 60_000)
-
-  # Calculates the number of milliseconds in a second and returns that along with the remaining
-  # milliseconds
-  @spec seconds_ms(time_units_remaining()) :: time_units_remaining()
-  defp seconds_ms(time_units), do: unit_ms(time_units, 1000)
-
-  # Calculates the number of milliseconds in a millisecond and returns that along with the remaining
-  # milliseconds
-  @spec milliseconds_ms(time_units_remaining()) :: time_units_remaining()
-  defp milliseconds_ms(time_units), do: unit_ms(time_units, 1)
-
-  # Takes a time count count and a time unit type number and converts that into a time description
-  @spec time_description({non_neg_integer, pos_integer}) :: String.t()
-  defp time_description({unit_count, 1}), do: hours_description(unit_count)
-  defp time_description({unit_count, 2}), do: minutes_description(unit_count)
-  defp time_description({unit_count, 3}), do: seconds_description(unit_count)
-  defp time_description({unit_count, 4}), do: ms_description(unit_count)
-
-  # Produces a text description of the number of hours
-  @spec hours_description(time_unit_list()) :: String.t()
-  defp hours_description(num_hours) do
-    "#{num_hours}h"
-  end
-
-  # Produces a text description of the number of minutes
-  @spec minutes_description(non_neg_integer()) :: String.t()
-  defp minutes_description(num_minutes) do
-    "#{num_minutes}m"
-  end
-
-  # Produces a text description of the number of seconds
-  @spec seconds_description(non_neg_integer()) :: String.t()
-  defp seconds_description(num_seconds) do
-    "#{num_seconds}s"
-  end
-
-  # Produces a text description of the number of milliseconds
-  @spec ms_description(non_neg_integer()) :: String.t()
-  defp ms_description(num_ms) do
-    "#{num_ms}ms"
-  end
 end

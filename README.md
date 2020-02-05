@@ -48,25 +48,71 @@ The following diagram is a visualization of the sorting strategy for those of yo
 
 In addition to the suite of unit tests, I intend to run the finished product through some tests to verify that the entire thing works under a variety of scenarios.
 
-- Test sorting an empty file [Not Run]
-- Test sorting a file with a single number [Not Run]
-- Test sorting 20 numbers, where we can easily verify all the numbers [Not Run]
-- Test sorting an input file where T < N, and verify that the correct intermediate files were produced [Not Run]
-- Test sorting an input file where T === N, and verify that the correct intermediate files were produced [Not Run]
-- Test sorting an input file where T > N, and verify that the correct intermediate files were produced [Not Run]
-- Test sorting an input file where T > P * N, and verify that the correct intermediate files were produced [Not Run]
-- Test sorting an input file where T == (P * N) + 1, and verify that P + 1 intermediate sorted chunk files were produced, with the first P files having N sorted integers in them, and the P + 1 file having one integer in it. The first round of merging should produce two intermediate, the first file with P * N sorted integers in it and the second file having a single integer in it. After the second round of merging, the integer in the second file should be merged with the other integers in the final output file. [Not Run]
+- Test sorting an empty file [Passed]
+- Test sorting a file with a single number [Passed]
+- Test sorting 20 numbers, where we can easily verify all the numbers [Passed]
+- Test sorting an input file where T < N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T === N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T > N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T > P * N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T == (P * N) + 1, and verify that P + 1 intermediate sorted chunk files were produced, with the first P files having N sorted integers in them, and the P + 1 file having one integer in it. The first round of merging should produce two intermediate, the first file with P * N sorted integers in it and the second file having a single integer in it. After the second round of merging, the integer in the second file should be merged with the other integers in the final output file. [Passed]
 - Test sorting a very large number of integers. A billion integers would suffice. [Not Run]
-- Test sorting using small (1,000), moderate (10,000), and large numbers for N (1,000,000) [Not Run]
+- Test sorting using small (1,000), moderate (10,000), and large numbers for N (1,000,000) [Passed]
 
 ## Current Status
 
-The integer generation tool is complete and the integer sorting tool is currently creating the initial set of sorted chunk files.
+This project is now finished and working as expected. The integer generator tool generates a text file containing random integers and the sorting tool sorts the integers in a text file without loading more than a specified number of integers into memory at any particular time.
+
+I've successfully generated and sorted a billion integers in the range [-100,000 to 100,000] in chunks of 100,000. The input and output files were 6.3 GB in size, and on my machine, it took 2 hours, 31 minutes to generate a billion integers and 20 hours, 19 minutes to sort a billion integers while having no more than 100,000 integers in memory at a time. This was a little faster than my [Node.js solution](https://github.com/Maultasche/NodeLargeSort), which took 19 hours to sort a billion integers, but much slower than my C# solution, which only took 1 hour, 40 minutes. This was not unexpected for me, since single-threaded file I/O is not what Elixir is optimized for.
+
+The memory usage was good at 10 - 20 MB the entire time. This was similar to the C# implementation and much better than the Node.js implementation. Processing maxed out one of my four cores, since this code was single-threaded. Elixir is very good at concurrency, but concurrency was not the point of this exercise.
+
+You can read about the implementation of this project in my series [Learn With Me: Elixir](https://inquisitivedeveloper.com/lwm-elixir-76/), spanning a series of 7 posts.
 
 ## Running the Integer Generator and Sorting Tools
 
-This section will be filled in later.
+The integer generator application is located in the int_gen directory. It can be built by switching to the "int_gen" directory, running `mix`, and packaging the result as an application.
+
+```text
+> mix escript.build
+```
+
+Once it's finished building, you can run it. 
+
+On MacOS or Linux, you'd just invoke the application with the necessary parameters. The following generates 100,000 integers in a "random_integers.txt" file in the "data" directory in the range of -1000 to 1000.
+
+```text
+> ./int_gen --count 100000 --lower-bound -1000 --upper-bound 1000 "../data/random_integers.txt"
+```
+
+On Windows, you need to use the `escript` utility to run the application package.
+
+```text
+> escript int_gen --count 100000 --lower-bound -1000 --upper-bound 1000 "../data/random_integers.txt"
+```
+
+Then to sort the integers, switch to the "int_sort" directory and run the build command for that application.
+
+```text
+> mix escript.build
+```
+
+Then you can invoke the int_sort application to sort a file of random integers and write the results to an output file.
+
+On MacOS or Linux, you'd do this to sort the integers in "../data/random_integers.txt" and write them to "../output/sorted_integers.txt", while only allowing 1000 integers to be in memory at a time.
  
+```text
+> ./int_sort --input-file "../data/random_integers.txt" --chunk-size 1000 "../output/sorted_integers.txt"
+```
+
+This what you would run on Windows.
+
+```text
+> escript int_sort --input-file "../data/random_integers.txt" --chunk-size 1000 "../output/sorted_integers.txt"
+```
+
+There's also a `--keep-intermediate` flag that will prevent any intermediate files from being deleted. That way, you can take a better look at the intermediate files were generated and see how the integers were sorted in chunks and merged together.
+
 ## Running Tests
 
 On a Windows command line
@@ -79,9 +125,11 @@ In a bash shell:
 ./runTests.sh
 ```
 
+These scripts will run `mix test` in each of the Elixir projects. Building the code is not necessary before running the tests. The `mix test` commands will cause anything to be automatically built before tests are run.
+
+There are currently 180 tests that a little over 30 seconds to run.
+
 ## Understanding the Code
 
-If you're interested in understanding the structure of the code, there's documentation describing how the code is structured.
+If you're interested in understanding the structure of the code, you can read about it in my series [Learn With Me: Elixir](https://inquisitivedeveloper.com/lwm-elixir-76/), spanning a series of 7 posts.
 
-- [IntGen](doc/IntGenImplementationDetails.md)
-- [IntSort](doc/IntSortImplementationDetails.md)

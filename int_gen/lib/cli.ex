@@ -3,6 +3,7 @@ defmodule IntGen.CLI do
   Handles the command line and options parsing logic
   """
 
+  alias LargeSort.Shared.CLI
   alias IntGen.CLI.Args
 
   @type parsed_args() :: {keyword(), list(String.t()), list()}
@@ -54,7 +55,13 @@ defmodule IntGen.CLI do
       |> Stream.map(fn {integer, _} -> integer end)
 
     # Create the integer file using the random integer stream
-    IntGen.create_integer_file(options.output_file, options.count, random_stream)
+    time_description = CLI.measure(fn ->
+      IntGen.create_integer_file(options.output_file, options.count, random_stream)
+    end)
+    |> CLI.ellapsed_time_description()
+
+    # Output how much time it took to generate the integers
+    output_runtime_description(time_description)
   end
 
   # Prints usage information
@@ -64,6 +71,12 @@ defmodule IntGen.CLI do
 
     example: int_gen --count 100 --lower-bound -100 --upper-bound 100 "random_integers.txt"
     """)
+  end
+
+  # Outputs the runtime description
+  defp output_runtime_description(time_description) do
+    IO.puts("")
+    IO.puts(time_description)
   end
 
   # Calculates the progress update frequency (the number of items that pass between
